@@ -645,6 +645,64 @@ Content-Type: application/json
 }
 ```
 
+### `POST /api/inventory`
+**Request:**
+```json
+{
+  "name_ar": "قفازات طبية لاتكس",
+  "name_en": "Medical Latex Gloves",
+  "type": "supplies",
+  "qty": 30,
+  "min_qty": 10,
+  "unit": "box"
+}
+```
+**Response 201:**
+```json
+{
+  "ok": true,
+  "data": {
+    "id": "inv_01HNEW",
+    "name_ar": "قفازات طبية لاتكس",
+    "name_en": "Medical Latex Gloves",
+    "type": "supplies",
+    "qty": 30,
+    "min_qty": 10,
+    "unit": "box",
+    "low_stock": false,
+    "is_active": true
+  },
+  "warning": null
+}
+```
+
+### `PUT /api/inventory/:id`
+**Request:**
+```json
+{
+  "name_ar": "قفازات طبية معقمة فاخرة",
+  "min_qty": 15
+}
+```
+**Response 200:**
+```json
+{
+  "ok": true,
+  "data": {
+    "id": "inv_01HNEW",
+    "name_ar": "قفازات طبية معقمة فاخرة",
+    "name_en": "Medical Latex Gloves",
+    "type": "supplies",
+    "qty": 30,
+    "min_qty": 15,
+    "unit": "box",
+    "low_stock": false,
+    "is_active": true
+  },
+  "warning": null
+}
+```
+
 ### `PATCH /api/inventory/:id/adjust-qty`
 **Request:** `{ "qty": 3 }`
 **Response 200 (بيولّد تنبيه نظام تلقائيًا):**

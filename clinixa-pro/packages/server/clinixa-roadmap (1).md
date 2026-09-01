@@ -107,16 +107,16 @@
 ### المرحلة ٤ — الموديولات الداعمة (٣ أيام)
 
 **اليوم ١٢: Inventory + Employees**
-- [ ] `inventory` كامل (مع توليد `system_alert` عند `low_stock`)
-- [ ] `employees` كامل (مع حماية `is_owner` المركزية)
+- [x] `inventory` كامل (مع توليد `system_alert` عند `low_stock`)
+- [x] `employees` كامل (مع حماية `is_owner` المركزية)
 
 **اليوم ١٣: Branches + Settings**
-- [ ] `branches` (مع رفض حذف آخر فرع)
-- [ ] `settings` (`clinic_settings` + `clinic_prices`)
+- [x] `branches` (مع رفض حذف آخر فرع)
+- [x] `settings` (`clinic_settings` + `clinic_prices`)
 
 **اليوم ١٤: Backup + System Alerts**
-- [ ] `backup` (تشغيل، سجل، استعادة)
-- [ ] `system-alerts` (قراءة، تعليم كمقروء)
+- [x] `backup` (تشغيل، سجل، استعادة)
+- [x] `system-alerts` (قراءة، تعليم كمقروء)
 
 ---
 
