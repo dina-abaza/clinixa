@@ -1,0 +1,97 @@
+@baseUrl = http://localhost:4321
+
+# =====================================================
+# PHASE 6 — SYNC ENGINE TEST (REST CLIENT)
+# =====================================================
+# ملاحظات سريعة:
+# 1) قبل التشغيل، نظّف ملف قاعدة البيانات المحلي لو عايز اختبار "clean reset"
+#    - احذف: packages/server/data/clinixa.db
+# 2) شغّل السيرفر أولاً:
+#    npm run dev
+# 3) شغّل هذا الملف من خلال VS Code REST Client
+# =====================================================
+
+### 0. Health Check
+GET {{baseUrl}}/health
+Content-Type: application/json
+
+###
+
+### 1. أول تشغيل / First Run Setup (نظافة كاملة)
+# @name firstRun
+POST {{baseUrl}}/api/setup/first-run
+Content-Type: application/json
+
+{
+  "license_key": "CLX-PHASE6-CLEAN-KEY-001",
+  "clinic": {
+    "name_ar": "عيادة المرحلة السادسة",
+    "phone": "01000000000",
+    "address": "القاهرة",
+    "specialty": "cardio"
+  },
+  "doctor_account": {
+    "name_ar": "د. محمد المرحلة السادسة",
+    "username": "dr.phase6",
+    "password": "password123"
+  },
+  "security": {
+    "question": "ما اسم مدرستك الأولى؟",
+    "answer": "الأندلس"
+  }
+}
+
+###
+
+### 2. تسجيل الدخول كمالك النظام
+# @name login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "dr.phase6",
+  "password": "password123"
+}
+
+###
+
+@authToken = {{login.response.body.data.token}}
+
+###
+
+### 3. جلب حالة المزامنة — يجب أن ينجح 200
+GET {{baseUrl}}/api/sync/status
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+###
+
+### 4. إعادة محاولة المزامنة — يجب أن ينجح 200
+POST {{baseUrl}}/api/sync/retry
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+###
+
+### 5. اختبار 401 بدون توكن
+GET {{baseUrl}}/api/sync/status
+Content-Type: application/json
+
+###
+
+### 6. اختبار 403 إذا كان المستخدم لا يملك صلاحية admin.view/admin.edit
+# لازم تجري هذا الاختبار بمستخدم غير مالك أو صلاحياته محدودة
+# مثال: أنشئ موظف جديد له صلاحيات محدودة ثم استخدم توكنه هنا
+# GET {{baseUrl}}/api/sync/status
+# Authorization: Bearer {{limitedEmployeeToken}}
+# Content-Type: application/json
+
+###
+
+# =====================================================
+# ملاحظة للتأكد من التأثير الحقيقي على outbox:
+# - لو تريد اختبار pending_count > 0 فعلياً، استخدم SQLite مباشرة أو
+#   أضف سجل في جدول sync_outbox ثم كرر طلب /api/sync/retry
+# - مثال SQLite من terminal:
+#   sqlite3 data/clinixa.db "INSERT INTO sync_outbox (...) VALUES (...);"
+# =====================================================

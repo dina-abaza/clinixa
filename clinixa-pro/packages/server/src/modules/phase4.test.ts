@@ -1,3 +1,5 @@
+import fs from 'fs';
+import path from 'path';
 import request from 'supertest';
 import app from '../app';
 import query from '../db/sqlite/query';
@@ -315,6 +317,24 @@ describe('Phase 4 — Supporting Modules Integration Tests', () => {
       expect(res.body.ok).toBe(true);
       expect(res.body.data.status).toBe('ok');
       expect(res.body.data.destination).toBe('google_drive');
+    });
+
+    it('ينشئ نسخة احتياطية فعلية على جهاز محلي عند اختيار local_device', async () => {
+      const res = await request(app)
+        .post('/api/backup/run')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ destination: 'local_device', kind: 'manual' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.ok).toBe(true);
+      expect(res.body.data.status).toBe('ok');
+      expect(res.body.data.destination).toBe('local_device');
+
+      const backupRoot = path.resolve(__dirname, '../..', 'data', 'backups');
+      expect(fs.existsSync(backupRoot)).toBe(true);
+
+      const backupFiles = fs.readdirSync(backupRoot);
+      expect(backupFiles.length).toBeGreaterThan(0);
     });
 
     it('يسجل عملية نسخ فاشلة وينشئ تنبيه نظام (POST /api/backup/run with force_fail)', async () => {

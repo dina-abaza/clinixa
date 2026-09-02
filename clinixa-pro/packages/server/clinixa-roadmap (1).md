@@ -40,105 +40,105 @@
 ### المرحلة ١ — إكمال طبقة قاعدة البيانات (٣-٤ أيام)
 
 **اليوم ١: باقي الـ Migrations**
-- [ ] `006_medical_records.ts` — medical_alerts, medical_history, diagnoses, medications, prescriptions, prescription_items, labs, radiology, documents
-- [ ] `007_attendance.ts` — جدول attendance + الـ indexes (branch_id+date, status)
-- [ ] `008_financials.ts` — charges, payments, day_closures + الـ indexes
-- [ ] تشغيل `npx knex migrate:latest` والتأكد إنها بتعدي بدون أخطاء
+- [ ✅] `006_medical_records.ts` — medical_alerts, medical_history, diagnoses, medications, prescriptions, prescription_items, labs, radiology, documents
+- [ ✅] `007_attendance.ts` — جدول attendance + الـ indexes (branch_id+date, status)
+- [ ✅] `008_financials.ts` — charges, payments, day_closures + الـ indexes
+- [ ✅] تشغيل `npx knex migrate:latest` والتأكد إنها بتعدي بدون أخطاء
 
 **اليوم ٢: تكملة الـ Migrations + Seed**
-- [ ] `009_inventory.ts` — inventory_items
-- [ ] `010_system_support.ts` — system_alerts, backup_history
-- [ ] `011_sync_outbox.ts` — sync_outbox + الـ Unique Index الحرج
-- [ ] `seed.ts` — إدخال أسعار افتراضية صفرية لكل charge_type في clinic_prices
-- [ ] فحص كل الجداول بـ DB Browser for SQLite يدويًا (تأكيد بصري إن كل حاجة زي ما هي متوقعة)
+- [ ✅] `009_inventory.ts` — inventory_items
+- [✅ ] `010_system_support.ts` — system_alerts, backup_history
+- [ ✅] `011_sync_outbox.ts` — sync_outbox + الـ Unique Index الحرج
+- [ ✅] `seed.ts` — إدخال أسعار افتراضية صفرية لكل charge_type في clinic_prices
+- [ ✅] فحص كل الجداول بـ DB Browser for SQLite يدويًا (تأكيد بصري إن كل حاجة زي ما هي متوقعة)
 
 **اليوم ٣: Utility Functions**
-- [ ] `shared/utils/arabicNormalize.ts` — دالة توحيد الحروف (أ/إ/آ→ا، ة→ه، ى→ي) + اختبار Jest بأمثلة حقيقية
-- [ ] `shared/utils/idGenerator.ts` — توليد `P-1002` من `patient_sequences`
-- [ ] `shared/utils/recalcDue.ts` — `SUM(charges) - SUM(payments)` لمريض معيّن
-- [ ] `shared/utils/nameMap.ts` — تحويل الاسم العربي لإنجليزي (يكفي نسخة أولية بسيطة، تحسينها لاحقًا)
-- [ ] Unit tests لكل دالة من الأربعة (نقطة حرجة — الدوال دي هتُستخدم في كل موديول بعد كده)
+- [✅ ] `shared/utils/arabicNormalize.ts` — دالة توحيد الحروف (أ/إ/آ→ا، ة→ه، ى→ي) + اختبار Jest بأمثلة حقيقية
+- [✅ ] `shared/utils/idGenerator.ts` — توليد `P-1002` من `patient_sequences`
+- [ ✅] `shared/utils/recalcDue.ts` — `SUM(charges) - SUM(payments)` لمريض معيّن
+- [✅ ] `shared/utils/nameMap.ts` — تحويل الاسم العربي لإنجليزي (يكفي نسخة أولية بسيطة، تحسينها لاحقًا)
+- [ ✅] Unit tests لكل دالة من الأربعة (نقطة حرجة — الدوال دي هتُستخدم في كل موديول بعد كده)
 
 **اليوم ٤: نقطة انطلاق السيرفر الفعلي**
-- [ ] `packages/server/src/app.ts` — إعداد Express (helmet, cors, json parser)
-- [ ] `packages/server/src/server.ts` — نقطة التشغيل (`app.listen`)
-- [ ] `middlewares/error-handler.middleware.ts` — يحوّل أي exception لشكل `ApiError` الموحّد
-- [ ] `middlewares/arabic-normalize.middleware.ts`
-- [ ] تجربة: `npm run dev` في `packages/server` ويشتغل على `localhost:4321` (حتى لو من غير أي route حقيقي لسه — نقطة تحقق مهمة إن كل حاجة متوصلة صح)
+- [ ✅] `packages/server/src/app.ts` — إعداد Express (helmet, cors, json parser)
+- [ ✅] `packages/server/src/server.ts` — نقطة التشغيل (`app.listen`)
+- [ ✅] `middlewares/error-handler.middleware.ts` — يحوّل أي exception لشكل `ApiError` الموحّد
+- [ ✅] `middlewares/arabic-normalize.middleware.ts`
+- [✅ ] تجربة: `npm run dev` في `packages/server` ويشتغل على `localhost:4321` (حتى لو من غير أي route حقيقي لسه — نقطة تحقق مهمة إن كل حاجة متوصلة صح)
 
 ---
 
 ### المرحلة ٢ — Auth & Setup (يومين)
 
 **اليوم ٥: Setup Module**
-- [x] `modules/setup/setup.validation.ts` (Zod schema لـ first-run طبقًا لـ `clinixa-api-reference.md` قسم ١)
-- [x] `modules/setup/setup.service.ts` — إنشاء clinic_settings + الفرع الرئيسي + حساب الطبيب في transaction واحدة
-- [x] `modules/setup/setup.controller.ts` + `setup.routes.ts`
-- [x] اختبار فعلي: `POST /api/setup/first-run` بـ Postman/Thunder Client، والتأكد إن الرد مطابق تمامًا للمثال الموثّق
+- [✅] `modules/setup/setup.validation.ts` (Zod schema لـ first-run طبقًا لـ `clinixa-api-reference.md` قسم ١)
+- [✅] `modules/setup/setup.service.ts` — إنشاء clinic_settings + الفرع الرئيسي + حساب الطبيب في transaction واحدة
+- [✅] `modules/setup/setup.controller.ts` + `setup.routes.ts`
+- [✅] اختبار فعلي: `POST /api/setup/first-run` بـ Postman/Thunder Client، والتأكد إن الرد مطابق تمامًا للمثال الموثّق
 
 **اليوم ٦: Auth Module**
-- [x] `middlewares/auth.middleware.ts` — فك تشفير JWT، حقن `employee_id`+`branch_id` في `req`
-- [x] `middlewares/permission.middleware.ts` — factory function بتاخد `Permission` وترفض لو مش موجودة
-- [x] `modules/auth/*` — login, logout, session, forgot-password
-- [x] اختبار: تسجيل دخول كامل، وتجربة endpoint محمي بدون token (لازم يرجع `401`)، وبصلاحية ناقصة (لازم يرجع `403`)
+- [✅] `middlewares/auth.middleware.ts` — فك تشفير JWT، حقن `employee_id`+`branch_id` في `req`
+- [✅] `middlewares/permission.middleware.ts` — factory function بتاخد `Permission` وترفض لو مش موجودة
+- [✅] `modules/auth/*` — login, logout, session, forgot-password
+- [✅] اختبار: تسجيل دخول كامل، وتجربة endpoint محمي بدون token (لازم يرجع `401`)، وبصلاحية ناقصة (لازم يرجع `403`)
 
 ---
 
 ### المرحلة ٣ — المسار الحرج اليومي (٥-٦ أيام)
 
 **اليوم ٧-٨: Patients Module**
-- [x] كل endpoints المرضى + السجل الطبي من `clinixa-api-reference.md` قسم ٢
-- [x] تركيز خاص: `arabicNormalize` بيتطبق فعليًا وقت الحفظ والبحث، و`DUPLICATE_PHONE` warning شغال
+- [✅] كل endpoints المرضى + السجل الطبي من `clinixa-api-reference.md` قسم ٢
+- [✅] تركيز خاص: `arabicNormalize` بيتطبق فعليًا وقت الحفظ والبحث، و`DUPLICATE_PHONE` warning شغال
 
 **اليوم ٩: Attendance Module**
-- [x] كل endpoints الحضور — تركيز خاص على `attendance.repository.ts` **من غير** دالة `update`/`delete` عامة (قاعدة معمارية صارمة)
-- [x] `POST /attendance/:id/finish` — الفعل المركّب، أهم endpoint في النظام كله
+- [✅] كل endpoints الحضور — تركيز خاص على `attendance.repository.ts` **من غير** دالة `update`/`delete` عامة (قاعدة معمارية صارمة)
+- [✅] `POST /attendance/:id/finish` — الفعل المركّب، أهم endpoint في النظام كله
 
 **اليوم ١٠: Payments Module**
-- [x] charges, payments, outstanding, day-summary close/reopen
-- [x] تأكيد: `due` بيتحسب لحظيًا في كل مكان، مفيش أي تخزين له
+- [✅] charges, payments, outstanding, day-summary close/reopen
+- [✅] تأكيد: `due` بيتحسب لحظيًا في كل مكان، مفيش أي تخزين له
 
 **اليوم ١١: اختبار تكاملي شامل للمسار الحرج**
-- [x] سيناريو كامل يدوي: check-in → call → finish (مع بنود) → دفع → إقفال يوم
-- [x] Jest integration test واحد على الأقل بيغطي السيناريو ده كامل
+- [✅] سيناريو كامل يدوي: check-in → call → finish (مع بنود) → دفع → إقفال يوم
+- [✅] Jest integration test واحد على الأقل بيغطي السيناريو ده كامل
 
 ---
 
 ### المرحلة ٤ — الموديولات الداعمة (٣ أيام)
 
 **اليوم ١٢: Inventory + Employees**
-- [x] `inventory` كامل (مع توليد `system_alert` عند `low_stock`)
-- [x] `employees` كامل (مع حماية `is_owner` المركزية)
+- [✅] `inventory` كامل (مع توليد `system_alert` عند `low_stock`)
+- [✅] `employees` كامل (مع حماية `is_owner` المركزية)
 
 **اليوم ١٣: Branches + Settings**
-- [x] `branches` (مع رفض حذف آخر فرع)
-- [x] `settings` (`clinic_settings` + `clinic_prices`)
+- [✅] `branches` (مع رفض حذف آخر فرع)
+- [✅] `settings` (`clinic_settings` + `clinic_prices`)
 
 **اليوم ١٤: Backup + System Alerts**
-- [x] `backup` (تشغيل، سجل، استعادة)
-- [x] `system-alerts` (قراءة، تعليم كمقروء)
+- [✅] `backup` (تشغيل، سجل، استعادة)
+- [✅] `system-alerts` (قراءة، تعليم كمقروء)
 
 ---
 
 ### المرحلة ٥ — تجهيز نهائي لفرع واحد (يوم واحد)
 
 **اليوم ١٥: مراجعة شاملة قبل التسليم لفرع واحد**
-- [ ] `npx tsc --noEmit` نظيف في كل الـ packages
-- [ ] مراجعة كل endpoint مقابل `clinixa-api-reference.md` (شكل الـ response مطابق حرفيًا)
-- [ ] تجربة كاملة من `setup.firstRun` لحد `day.close` بدون أي كراش
-- [ ] **نقطة قرار:** المنتج جاهز فعليًا للبيع/الاستخدام لعيادة بفرع واحد (`sync_mode=none`) عند هذه النقطة
+- [✅ ] `npx tsc --noEmit` نظيف في كل الـ packages
+- [✅ ] مراجعة كل endpoint مقابل `clinixa-api-reference.md` (شكل الـ response مطابق حرفيًا)
+- [✅ ] تجربة كاملة من `setup.firstRun` لحد `day.close` بدون أي كراش
+- [✅ ] **نقطة قرار:** المنتج جاهز فعليًا للبيع/الاستخدام لعيادة بفرع واحد (`sync_mode=none`) عند هذه النقطة
 
 ---
 
 ### المرحلة ٦ — محرك المزامنة (بعد المرحلة ٥ فقط، ٣-٤ أيام)
 > لا تبدأ هنا إلا بعد ما المراحل فوق شغالة ومختبرة بالكامل — ده قرارنا المعماري من الأول.
 
-- [ ] `sync.repository.ts` — upsert pointer في outbox
-- [ ] `sync.triggers.ts` — hook في كل service بيغيّر جدول Syncable
-- [ ] `sync.connectivity.ts` — فحص اتصال فعلي
-- [ ] `sync.engine.ts` — الحلقة الكاملة (pending→syncing→synced/failed) + upsert على Mongo Atlas
-- [ ] `GET /sync/status` + `POST /sync/retry`
-- [ ] اختبار قطع نت فعلي (يدوي) والتأكد إن البيانات بترجع تتزامن لوحدها
+- [✅ ] `sync.repository.ts` — upsert pointer في outbox
+- [✅ ] `sync.triggers.ts` — hook في كل service بيغيّر جدول Syncable
+- [✅ ] `sync.connectivity.ts` — فحص اتصال فعلي
+- [✅ ] `sync.engine.ts` — الحلقة الكاملة (pending→syncing→synced/failed) + upsert على Mongo Atlas
+- [✅ ] `GET /sync/status` + `POST /sync/retry`
+- [✅ ] اختبار قطع نت فعلي (يدوي) والتأكد إن البيانات بترجع تتزامن لوحدها
 
 ---
 
@@ -146,32 +146,33 @@
 > دي مش "فرونت إند" — دي مسؤولية الباك إند/الفول ستاك ديفلوبر (إنت) لأنها بتتعلق بتشغيل الـ Express جوّه الـ Electron main process، مش بكود الواجهة نفسها.
 
 **اليوم ١٦: تشغيل السيرفر جوّه Electron**
-- [ ] `packages/electron/src/main.ts` — نقطة الدخول، بيفتح الـ window ويشغّل الـ server
-- [ ] `packages/electron/src/server-bootstrap.ts` — استدعاء `app.listen()` بتاع Express من جوّه الـ main process نفسه (مش عملية منفصلة)
-- [ ] `packages/electron/src/window.ts` — إعداد `BrowserWindow` (تحميل الفرونت المبني، أو `localhost:5173` وقت التطوير)
-- [ ] تأكيد أمان: `contextIsolation: true`, `nodeIntegration: false` — نقطة حرجة أمنيًا
-- [ ] تجربة: تشغيل التطبيق كـ Electron app حقيقي (`electron .`) والتأكد إن الفرونت بيكلم الباك على `localhost` بنجاح
+- [✅ ] `packages/electron/src/main.ts` — نقطة الدخول، بيفتح الـ window ويشغّل الـ server
+- [✅ ] `packages/electron/src/server-bootstrap.ts` — استدعاء `app.listen()` بتاع Express من جوّه الـ main process نفسه (مش عملية منفصلة)
+- [✅ ] `packages/electron/src/window.ts` — إعداد `BrowserWindow` (تحميل الفرونت المبني، أو `localhost:5173` وقت التطوير)
+- [✅ ] تأكيد أمان: `contextIsolation: true`, `nodeIntegration: false` — نقطة حرجة أمنيًا
+- [✅ ] تجربة: تشغيل التطبيق كـ Electron app حقيقي (`electron .`) والتأكد إن الفرونت بيكلم الباك على `localhost` بنجاح
 
 **اليوم ١٧: IPC Handlers + الجدولة**
-- [ ] `packages/electron/src/preload.ts` — الجسر الآمن (`contextBridge`)
-- [ ] `ipc/print.handler.ts` — طباعة الإيصالات
-- [ ] `ipc/file-dialog.handler.ts` — اختيار وجهة النسخ الاحتياطي (فلاشة/مجلد محلي)
-- [ ] `jobs/backupScheduler.ts` (`node-cron`) — نسخ احتياطي تلقائي مجدول
-- [ ] تجربة: طباعة إيصال فعلي من التطبيق، واختيار مسار نسخ احتياطي من نافذة حوار حقيقية
+- [✅ ] `packages/electron/src/preload.ts` — الجسر الآمن (`contextBridge`)
+- [✅ ] `ipc/print.handler.ts` — طباعة الإيصالات
+- [✅ ] `ipc/file-dialog.handler.ts` — اختيار وجهة النسخ الاحتياطي (فلاشة/مجلد محلي)
+- [✅ ] `jobs/backupScheduler.ts` (`node-cron`) — نسخ احتياطي تلقائي مجدول
+- [✅ ] تجربة: طباعة إيصال فعلي من التطبيق، واختيار مسار نسخ احتياطي من نافذة حوار حقيقية
 
 **اليوم ١٨: مسار المستخدم الكامل E2E**
-- [ ] تشغيل التطبيق من الصفر (زي عميل حقيقي فتحه أول مرة) → Setup → تسجيل دخول → مريض → حضور → كشف → دفع → نسخة احتياطية
-- [ ] تسجيل أي مشكلة تكامل ظهرت بين الطبقات التلاتة (Electron/Server/Client) وحلها
+- [✅ ] تشغيل التطبيق من الصفر (زي عميل حقيقي فتحه أول مرة) → Setup → تسجيل دخول → مريض → حضور → كشف → دفع → نسخة احتياطية
+- [✅ ] تسجيل أي مشكلة تكامل ظهرت بين الطبقات التلاتة (Electron/Server/Client) وحلها
 
 ---
 
 ### المرحلة ٨ — تكامل النسخ الاحتياطي الحقيقي (يومين)
 
 **اليوم ١٩: الوجهات المحلية**
-- [ ] تنفيذ فعلي لـ `local_device` و`usb` — نسخ ملف `clinixa.db` + مجلد `attachments/` كامل لمسار مختار
-- [ ] التحقق من سلامة النسخة (حجم الملف، فتح تجريبي للتأكد إنها مش تالفة)
+- [✅ ] تنفيذ فعلي لـ `local_device` و`usb` — نسخ ملف `clinixa.db` + مجلد `attachments/` كامل لمسار مختار
+- [✅ ] التحقق من سلامة النسخة (حجم الملف، فتح تجريبي للتأكد إنها مش تالفة)
 
-**اليوم ٢٠: Google Drive Integration**
+**اليوم ٢٠: Google Drive Integration**    لسه محتاج احدد هنستخدم api ولا اخلي المستخدم يخزن الملف بنفسه 
+
 - [ ] تكامل فعلي مع Google Drive API (OAuth، رفع ملف، معالجة فشل الاتصال)
 - [ ] معالجة أسباب الفشل الموثّقة (`token`, `offline`, `device`) وتسجيلها في `backup_history.fail_reason` بدقة
 

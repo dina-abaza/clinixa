@@ -1,13 +1,20 @@
 {
   "name": "electron",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Clinixa desktop shell",
+  "main": "dist/main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc",
+    "start": "electron .",
+    "dev": "npm run build && electron ."
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs"
+  "type": "commonjs",
+  "devDependencies": {
+    "electron": "^37.3.0",
+    "typescript": "^5.6.3",
+    "@types/node": "^24.0.0"
+  }
 }

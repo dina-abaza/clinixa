@@ -12,7 +12,7 @@ export function requirePermission(permission: Permission) {
     const employee = req.employee;
 
     if (!employee) {
-      throw new AppError('UNAUTHORIZED', 'يجب تسجيل الدخول أولاً', 401);
+      return next(new AppError('UNAUTHORIZED', 'يجب تسجيل الدخول أولاً', 401));
     }
 
     // المالك متاح له كل الصلاحيات دايمًا
@@ -21,6 +21,6 @@ export function requirePermission(permission: Permission) {
       return;
     }
 
-    throw new AppError('FORBIDDEN', 'ليس لديك صلاحية لتنفيذ هذا الإجراء', 403);
+    return next(new AppError('FORBIDDEN', 'ليس لديك صلاحية لتنفيذ هذا الإجراء', 403));
   };
 }

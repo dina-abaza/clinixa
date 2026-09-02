@@ -16,6 +16,7 @@ import settingsRoutes from './modules/settings/settings.routes';
 import backupRoutes from './modules/backup/backup.routes';
 import systemAlertsRoutes from './modules/system-alerts/system-alerts.routes';
 import configRoutes from './modules/config/config.routes';
+import syncRoutes from './modules/sync/sync.routes';
 
 const app = express();
 
@@ -56,6 +57,7 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/backup', backupRoutes);
 app.use('/api/system-alerts', systemAlertsRoutes);
 app.use('/api/config', configRoutes);
+app.use('/api/sync', syncRoutes);
 
 // Middleware الأخطاء في النهاية
 app.use(errorHandler);
