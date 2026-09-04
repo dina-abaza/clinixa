@@ -70,6 +70,8 @@ export type {
   // تنبيهات ونخ احتياطي
   SystemAlert,
   BackupRecord,
+  GoogleDriveSettings,
+  UpdateGoogleDriveSettingsInput,
   // مشتركة
   PaginatedResponse,
   ApiSuccess,

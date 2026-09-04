@@ -171,10 +171,12 @@
 - [✅ ] تنفيذ فعلي لـ `local_device` و`usb` — نسخ ملف `clinixa.db` + مجلد `attachments/` كامل لمسار مختار
 - [✅ ] التحقق من سلامة النسخة (حجم الملف، فتح تجريبي للتأكد إنها مش تالفة)
 
-**اليوم ٢٠: Google Drive Integration**    لسه محتاج احدد هنستخدم api ولا اخلي المستخدم يخزن الملف بنفسه 
+**اليوم ٢٠: Google Drive Integration (Google Apps Script Web App + تشفير AES-256-GCM)**
 
-- [ ] تكامل فعلي مع Google Drive API (OAuth، رفع ملف، معالجة فشل الاتصال)
-- [ ] معالجة أسباب الفشل الموثّقة (`token`, `offline`, `device`) وتسجيلها في `backup_history.fail_reason` بدقة
+- [✅] تكامل فعلي مع Google Apps Script Web App مع تشفير البيانات بكلمة سر وتخزين المفاتيح في جدول `google_drive_settings`
+- [✅] معالجة أسباب الفشل الموثّقة (`token`, `offline`, `device`) وتسجيلها في `backup_history.fail_reason` وتوليد `system_alerts`
+- [✅] مسارات API كاملة لإدارة وحذف وتحديث إعدادات Google Drive (`GET`, `PUT`, `DELETE /api/backup/google-drive`)
+
 
 ---
 

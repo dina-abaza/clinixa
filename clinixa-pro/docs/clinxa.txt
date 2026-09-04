@@ -1,0 +1,15 @@
+clinxa
+
+الإصدار 1 بتاريخ 04‏/09‏/2026 الساعة 10:11 ص
+رقم تعريف عملية النشر
+
+AKfycbwoi8x1AcBgYcgPuAWhMrfVYrqBEh7Ml2rDz-TTrg6HWC8kx8iGnulQiWPoSwMmsjyDNg
+
+تطبيق الويب
+عنوان URL
+
+https://script.google.com/macros/s/AKfycbwoi8x1AcBgYcgPuAWhMrfVYrqBEh7Ml2rDz-TTrg6HWC8kx8iGnulQiWPoSwMmsjyDNg/exec
+
+
+
+SECRET_KEY = "Clinic_App_BkUp_98f7a2d4c8e1a3f6b5297130e4"

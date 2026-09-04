@@ -354,27 +354,105 @@ POST   /api/backup/restore        → admin.edit
 
 ---
 
+### 5. جلب إعدادات Google Drive
+```
+GET /api/backup/google-drive
+Authorization: Bearer <token>
+```
+
+**الاستجابة الناجحة (200):**
+```json
+{
+  "ok": true,
+  "data": {
+    "id": "singleton",
+    "script_url": "https://script.google.com/macros/s/.../exec",
+    "has_secret_key": true,
+    "has_backup_password": true,
+    "is_enabled": true,
+    "updated_at": "2026-09-04 11:30:00"
+  },
+  "warning": null
+}
+```
+
+---
+
+### 6. ضبط وتحديث إعدادات Google Drive
+```
+PUT /api/backup/google-drive
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**جسم الطلب:**
+```json
+{
+  "script_url": "https://script.google.com/macros/s/.../exec",
+  "secret_key": "Clinic_App_BkUp_...",
+  "backup_password": "MyEncryptionPassword2026!",
+  "is_enabled": true
+}
+```
+
+**الاستجابة الناجحة (200):**
+```json
+{
+  "ok": true,
+  "data": {
+    "settings": {
+      "id": "singleton",
+      "script_url": "https://script.google.com/macros/s/.../exec",
+      "has_secret_key": true,
+      "has_backup_password": true,
+      "is_enabled": true,
+      "updated_at": "2026-09-04 11:30:00"
+    },
+    "message": "تم حفظ إعدادات Google Drive بنجاح"
+  },
+  "warning": null
+}
+```
+
+---
+
+### 7. حذف إعدادات Google Drive وتعطيلها
+```
+DELETE /api/backup/google-drive
+Authorization: Bearer <token>
+```
+
+**الاستجابة الناجحة (200):**
+```json
+{
+  "ok": true,
+  "data": {
+    "message": "تم مسح إعدادات Google Drive وتعطيل المزامنة السحابية بنجاح"
+  },
+  "warning": null
+}
+```
+
+---
+
 ## 📝 ملاحظات للفرونت اند
 
-1. **عدم حفظ الملفات مباشرة**: الملفات تُحفظ على الخادم تلقائياً، الفرونت يعرض النتائج فقط.
-
-2. **تحديث السجل**: بعد نسخة جديدة، اجلب السجل مجدداً للحصول على أحدث النتائج.
-
-3. **رسائل الخطأ**: معروضة بالعربية من الخادم مباشرة - لا تحتاج لترجمة إضافية.
-
-4. **الصلاحيات**: إذا ظهر `403 FORBIDDEN`، فالمستخدم لا يملك `admin.edit`.
-
-5. **التنبيهات التلقائية**: عند فشل النسخ، سيظهر تنبيه في `/api/system-alerts` تلقائياً.
-
-6. **Google Drive مؤجل**: لا يزال غير مدعوم، تابع حالة المشروع للتحديثات.
+1. **التشفير التلقائي**: يتم تشفير النسخ المرفوعة لـ Google Drive بـ `AES-256-GCM` باستخدام كلمة السر المضبوطة، لحماية تامة للبيانات ضد السرقة.
+2. **عدم حفظ الملفات مباشرة**: الملفات تُحفظ على الخادم وجوجل درايف تلقائياً، الفرونت يعرض النتائج فقط.
+3. **تحديث السجل**: بعد نسخة جديدة، اجلب السجل مجدداً للحصول على أحدث النتائج.
+4. **رسائل الخطأ**: معروضة بالعربية من الخادم مباشرة - لا تحتاج لترجمة إضافية.
+5. **الصلاحيات**: إذا ظهر `403 FORBIDDEN`، فالمستخدم لا يملك `admin.edit` أو `admin.view`.
+6. **التنبيهات التلقائية**: عند فشل النسخ، سيظهر تنبيه في `/api/system-alerts` تلقائياً.
+7. **Google Drive Integration مدعوم بالكامل**: عبر الـ Endpoints أعلاه.
 
 ---
 
 ## 🧪 أمثلة الاختبار
 
 استخدم ملف [backup.http](../packages/server/requests/backup.http) لاختبار جميع الحالات:
-- ✅ النسخ الناجحة
+- ✅ النسخ الناجحة (محلي، USB، Google Drive)
 - ❌ حالات الفشل المختلفة
+- ✅ ضبط وإدارة Google Drive
 - ✅ الاستعادة بكلمات تأكيد مختلفة
 
 ---
@@ -382,7 +460,9 @@ POST   /api/backup/restore        → admin.edit
 ## 📞 التطوير والصيانة
 
 - **ملف الخدمة**: [backup.service.ts](../packages/server/src/modules/backup/backup.service.ts)
+- **ملف التشفير**: [backup.crypto.ts](../packages/server/src/modules/backup/backup.crypto.ts)
 - **ملف الروتر**: [backup.routes.ts](../packages/server/src/modules/backup/backup.routes.ts)
-- **الاختبارات**: [phase4.test.ts](../packages/server/src/modules/phase4.test.ts)
+- **الاختبارات**: [backup_drive.test.ts](../packages/server/src/modules/backup/backup_drive.test.ts)
 - **الصلاحيات**: `admin.view` و `admin.edit` من `@clinixa/shared`
+
 

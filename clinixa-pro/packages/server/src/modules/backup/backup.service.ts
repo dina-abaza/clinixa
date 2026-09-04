@@ -3,13 +3,28 @@ import fs from 'fs';
 import path from 'path';
 import query from '../../db/sqlite/query';
 import { AppError } from '../../middlewares/error-handler.middleware';
-import { env } from '../../config/env';
-import type { BackupRecord, BackupStatus, BackupFailReason, BackupKind, BackupDestination } from '@clinixa/shared';
+import type {
+  BackupRecord,
+  BackupStatus,
+  BackupFailReason,
+  BackupKind,
+  BackupDestination,
+  GoogleDriveSettings,
+} from '@clinixa/shared';
 import type {
   RunBackupInput,
   UpdateBackupDestinationInput,
   RestoreBackupInput,
+  UpdateGoogleDriveSettingsInput,
 } from './backup.validation';
+import {
+  encryptBackupData,
+  decryptBackupData,
+  encryptBuffer,
+  decryptBuffer,
+  type EncryptedBackupPayload,
+} from './backup.crypto';
+
 
 /**
  * @description جلب سجل عمليات النسخ الاحتياطي السابقة مرتبة تنازلياً
@@ -35,6 +50,119 @@ export async function getBackupHistory(): Promise<{ items: BackupRecord[] }> {
 }
 
 /**
+ * @description جلب إعدادات الربط مع Google Drive
+ * @returns {Promise<GoogleDriveSettings>} إعدادات الربط الحالية (مع إخفاء المفاتيح الحساسة)
+ */
+export async function getGoogleDriveSettings(): Promise<GoogleDriveSettings> {
+  let row = await query('google_drive_settings').where({ id: 'singleton' }).first();
+
+  if (!row) {
+    await query('google_drive_settings').insert({
+      id: 'singleton',
+      script_url: null,
+      secret_key: null,
+      backup_password: null,
+      is_enabled: 0,
+    });
+    row = await query('google_drive_settings').where({ id: 'singleton' }).first();
+  }
+
+  return {
+    id: 'singleton',
+    script_url: row.script_url ?? null,
+    has_secret_key: Boolean(row.secret_key && row.secret_key.trim().length > 0),
+    has_backup_password: Boolean(row.backup_password && row.backup_password.trim().length > 0),
+    is_enabled: Boolean(row.is_enabled),
+    updated_at: row.updated_at ?? null,
+  };
+}
+
+/**
+ * @description تحديث أو ضبط إعدادات Google Drive
+ * @param {UpdateGoogleDriveSettingsInput} input - البيانات الجديدة
+ * @returns {Promise<{ settings: GoogleDriveSettings; message: string }>} الإعدادات المحدثة
+ */
+export async function updateGoogleDriveSettings(
+  input: UpdateGoogleDriveSettingsInput
+): Promise<{ settings: GoogleDriveSettings; message: string }> {
+  const existing = await query('google_drive_settings').where({ id: 'singleton' }).first();
+
+  const updateData: Record<string, any> = {
+    updated_at: query.raw("(datetime('now'))"),
+  };
+
+  if (input.script_url !== undefined) {
+    updateData.script_url = input.script_url ? input.script_url.trim() : null;
+  }
+  if (input.secret_key !== undefined) {
+    updateData.secret_key = input.secret_key ? input.secret_key.trim() : null;
+  }
+  if (input.backup_password !== undefined) {
+    updateData.backup_password = input.backup_password ? input.backup_password.trim() : null;
+  }
+  if (input.is_enabled !== undefined) {
+    updateData.is_enabled = input.is_enabled ? 1 : 0;
+  }
+
+  if (existing) {
+    await query('google_drive_settings').where({ id: 'singleton' }).update(updateData);
+  } else {
+    await query('google_drive_settings').insert({
+      id: 'singleton',
+      script_url: updateData.script_url ?? null,
+      secret_key: updateData.secret_key ?? null,
+      backup_password: updateData.backup_password ?? null,
+      is_enabled: updateData.is_enabled ?? 0,
+    });
+  }
+
+  const updated = await getGoogleDriveSettings();
+  return {
+    settings: updated,
+    message: 'تم حفظ إعدادات Google Drive بنجاح',
+  };
+}
+
+/**
+ * @description حذف وتفريغ إعدادات Google Drive وتعطيل الربط
+ * @returns {Promise<{ message: string }>} رسالة النجاح
+ */
+export async function deleteGoogleDriveSettings(): Promise<{ message: string }> {
+  await query('google_drive_settings').where({ id: 'singleton' }).update({
+    script_url: null,
+    secret_key: null,
+    backup_password: null,
+    is_enabled: 0,
+    updated_at: query.raw("(datetime('now'))"),
+  });
+
+  return { message: 'تم مسح إعدادات Google Drive وتعطيل المزامنة السحابية بنجاح' };
+}
+
+/**
+ * @description تجميع بيانات جميع الجداول في قاعدة البيانات لإنشاء نسخة احتياطية كاملة وشاملة 100%
+ */
+async function exportDatabaseTables(): Promise<Record<string, any[]>> {
+  const tableRows = await query('sqlite_master')
+    .where({ type: 'table' })
+    .whereNotIn('name', ['sqlite_sequence', 'knex_migrations', 'knex_migrations_lock'])
+    .select('name');
+
+  const exportData: Record<string, any[]> = {};
+  for (const t of tableRows) {
+    try {
+      const rows = await query(t.name).select('*');
+      exportData[t.name] = rows;
+    } catch {
+      exportData[t.name] = [];
+    }
+  }
+
+  return exportData;
+}
+
+
+/**
  * @description تنفيذ عملية النسخ الاحتياطي وتوثيقها في السجل
  * @param {RunBackupInput} input - وجهة ونوع النسخ
  * @returns {Promise<BackupRecord>} نتيجة وسجل عملية النسخ
@@ -48,11 +176,13 @@ export async function runBackup(input: RunBackupInput): Promise<BackupRecord> {
   const kind: BackupKind = input.kind as BackupKind;
   const destination: BackupDestination = input.destination as BackupDestination;
 
-  const isFail = Boolean(input.force_fail || input.fail_reason);
-  const failReason = isFail ? ((input.fail_reason as BackupFailReason) || 'offline') : null;
-
+  let isFail = Boolean(input.force_fail || input.fail_reason);
+  let failReason: BackupFailReason | null = isFail
+    ? ((input.fail_reason as BackupFailReason) || 'offline')
+    : null;
   let sizeMb: number | null = null;
 
+  // 1. النسخ المحلي أو عبر USB (مشفر بـ AES-256-GCM)
   if (!isFail && (destination === 'local_device' || destination === 'usb')) {
     try {
       const backupRoot = path.resolve(__dirname, '../../..', 'data', 'backups');
@@ -68,8 +198,21 @@ export async function runBackup(input: RunBackupInput): Promise<BackupRecord> {
 
       fs.mkdirSync(backupDir, { recursive: true });
 
+      const driveSettings = await query('google_drive_settings').where({ id: 'singleton' }).first();
+      const clinicSettings = await query('clinic_settings').where({ id: 'singleton' }).first();
+      const encPassword =
+        (input as any).backup_password ||
+        driveSettings?.backup_password ||
+        clinicSettings?.license_key ||
+        'ClinixaBackupKey2026';
+
       if (fs.existsSync(dbSource)) {
-        fs.copyFileSync(dbSource, path.join(backupDir, 'clinixa.db'));
+        const dbBuffer = fs.readFileSync(dbSource);
+        const encryptedPayload = encryptBuffer(dbBuffer, encPassword);
+        fs.writeFileSync(
+          path.join(backupDir, 'clinixa.db.encrypted'),
+          JSON.stringify(encryptedPayload)
+        );
       }
 
       if (fs.existsSync(attachmentsSource)) {
@@ -82,7 +225,7 @@ export async function runBackup(input: RunBackupInput): Promise<BackupRecord> {
         let size = 0;
         try {
           const files = fs.readdirSync(dirPath);
-          files.forEach(file => {
+          files.forEach((file) => {
             const filePath = path.join(dirPath, file);
             const stat = fs.statSync(filePath);
             if (stat.isFile()) {
@@ -98,25 +241,93 @@ export async function runBackup(input: RunBackupInput): Promise<BackupRecord> {
       };
 
       const totalSize = calculateDirSize(backupDir);
-
       sizeMb = Number((totalSize / (1024 * 1024)).toFixed(1)) || 1.2;
     } catch {
-      sizeMb = 128.4;
+      isFail = true;
+      failReason = 'device';
     }
   }
 
+  // 2. النسخ السحابي عبر Google Drive
   if (!isFail && destination === 'google_drive') {
-    sizeMb = 128.4;
+    const driveSettings = await query('google_drive_settings').where({ id: 'singleton' }).first();
+
+    if (
+      !driveSettings ||
+      !driveSettings.script_url ||
+      !driveSettings.secret_key ||
+      !driveSettings.backup_password ||
+      !driveSettings.is_enabled
+    ) {
+      isFail = true;
+      failReason = 'token';
+    } else {
+      try {
+        const dbDump = await exportDatabaseTables();
+        const encryptedPayload = encryptBackupData(dbDump, driveSettings.backup_password);
+        const fileName = `clinixa_backup_${dateStr}_${timeStr.replace(/:/g, '-')}.encrypted.json`;
+
+        const requestBody = {
+          secretKey: driveSettings.secret_key,
+          fileName,
+          content: encryptedPayload,
+        };
+
+        const jsonString = JSON.stringify(requestBody);
+        const payloadBytes = Buffer.byteLength(jsonString, 'utf8');
+        sizeMb = Number((payloadBytes / (1024 * 1024)).toFixed(2)) || 0.1;
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 20000);
+
+        try {
+          const res = await fetch(driveSettings.script_url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: jsonString,
+            redirect: 'follow',
+            signal: controller.signal,
+          });
+
+          clearTimeout(timeoutId);
+
+          if (!res.ok) {
+            isFail = true;
+            failReason = res.status === 401 || res.status === 403 ? 'token' : 'device';
+          } else {
+            const data: any = await res.json();
+            if (data && data.status === 'error') {
+              isFail = true;
+              failReason = 'token';
+            }
+          }
+        } catch (fetchErr: any) {
+          clearTimeout(timeoutId);
+          isFail = true;
+          if (fetchErr.name === 'AbortError' || fetchErr.code === 'ENOTFOUND' || fetchErr.code === 'ECONNREFUSED' || fetchErr.message?.includes('fetch')) {
+            failReason = 'offline';
+          } else {
+            failReason = 'device';
+          }
+        }
+      } catch (err: any) {
+        isFail = true;
+        failReason = failReason || 'device';
+      }
+    }
   }
 
   const status: BackupStatus = isFail ? 'fail' : 'ok';
+  if (isFail) {
+    sizeMb = null;
+  }
 
   await query('backup_history').insert({
     id: backupId,
     date: dateStr,
     time: timeStr,
     status,
-    fail_reason: failReason,
+    fail_reason: isFail ? failReason : null,
     size_mb: sizeMb,
     kind,
     destination,
@@ -124,11 +335,12 @@ export async function runBackup(input: RunBackupInput): Promise<BackupRecord> {
 
   if (isFail) {
     const alertId = `alt_${crypto.randomUUID()}`;
-    const reasonText = failReason === 'offline'
-      ? 'لا يوجد اتصال بالإنترنت'
-      : failReason === 'token'
-      ? 'انتهت صلاحية جلسة التخزين السحابي'
-      : 'تعذر الوصول لجهاز التخزين';
+    const reasonText =
+      failReason === 'offline'
+        ? 'لا يوجد اتصال بالإنترنت'
+        : failReason === 'token'
+        ? 'انتهت صلاحية جلسة التخزين السحابي أو المفاتيح غير صالحة'
+        : 'تعذر الوصول لجهاز التخزين';
 
     await query('system_alerts').insert({
       id: alertId,
@@ -145,7 +357,7 @@ export async function runBackup(input: RunBackupInput): Promise<BackupRecord> {
     date: dateStr,
     time: timeStr,
     status,
-    fail_reason: failReason,
+    fail_reason: isFail ? failReason : null,
     size_mb: sizeMb,
     kind,
     destination,
@@ -168,7 +380,7 @@ export async function updateBackupDestination(
 
 /**
  * @description استعادة البيانات من نسخة احتياطية بعد التحقق من كلمة التأكيد
- * @param {RestoreBackupInput} input - نص التأكيد ومعرّف النسخة
+ * @param {RestoreBackupInput} input - نص التأكيد ومعرّف النسخة وكلمة سر التشفير
  * @returns {Promise<{ message: string }>} رسالة نجاح الاستعادة
  * @throws {AppError} 400 VALIDATION_ERROR إذا لم يطابق نص التأكيد
  */

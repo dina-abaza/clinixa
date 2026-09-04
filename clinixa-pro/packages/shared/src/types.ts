@@ -373,6 +373,25 @@ export interface BackupRecord {
   destination: BackupDestination;
 }
 
+/** @description إعدادات النسخ الاحتياطي السحابي عبر Google Drive */
+export interface GoogleDriveSettings {
+  id: string;
+  script_url: string | null;
+  has_secret_key: boolean;
+  has_backup_password: boolean;
+  is_enabled: boolean;
+  updated_at: string | null;
+}
+
+/** @description مدخلات تحديث إعدادات Google Drive */
+export interface UpdateGoogleDriveSettingsInput {
+  script_url?: string | null;
+  secret_key?: string | null;
+  backup_password?: string | null;
+  is_enabled?: boolean;
+}
+
+
 // ─────────────────────────────────────────────────────────────
 // إعدادات العيادة والأسعار (Clinic Settings & Prices)
 // ─────────────────────────────────────────────────────────────

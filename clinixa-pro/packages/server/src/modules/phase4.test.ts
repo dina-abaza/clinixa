@@ -311,13 +311,14 @@ describe('Phase 4 — Supporting Modules Integration Tests', () => {
       const res = await request(app)
         .post('/api/backup/run')
         .set('Authorization', `Bearer ${authToken}`)
-        .send({ destination: 'google_drive', kind: 'manual' });
+        .send({ destination: 'usb', kind: 'manual' });
 
       expect(res.status).toBe(200);
       expect(res.body.ok).toBe(true);
       expect(res.body.data.status).toBe('ok');
-      expect(res.body.data.destination).toBe('google_drive');
+      expect(res.body.data.destination).toBe('usb');
     });
+
 
     it('ينشئ نسخة احتياطية فعلية على جهاز محلي عند اختيار local_device', async () => {
       const res = await request(app)

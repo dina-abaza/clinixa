@@ -27,11 +27,25 @@ export const updateBackupDestinationSchema = z.object({
 export type UpdateBackupDestinationInput = z.infer<typeof updateBackupDestinationSchema>;
 
 /**
+ * @description سكيمة التحقق لضبط وتحديث إعدادات Google Drive
+ */
+export const updateGoogleDriveSettingsSchema = z.object({
+  script_url: z.string().url('عنوان رابط Google Script غير صالح').nullable().optional(),
+  secret_key: z.string().min(1, 'مفتاح الأمان السري لا يمكن أن يكون فارغاً').nullable().optional(),
+  backup_password: z.string().min(4, 'كلمة سر التشفير يجب أن تكون 4 أحرف على الأقل').nullable().optional(),
+  is_enabled: z.boolean().optional(),
+});
+
+export type UpdateGoogleDriveSettingsInput = z.infer<typeof updateGoogleDriveSettingsSchema>;
+
+/**
  * @description سكيمة التحقق لطلب استعادة النسخة الاحتياطية
  */
 export const restoreBackupSchema = z.object({
   confirmation_text: z.string({ message: 'نص تأكيد الاستعادة مطلوب' }),
   backup_id: z.string().optional(),
+  backup_password: z.string().optional(),
 });
 
 export type RestoreBackupInput = z.infer<typeof restoreBackupSchema>;
+

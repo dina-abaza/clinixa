@@ -7,7 +7,7 @@
     "dev": "ts-node-dev -r tsconfig-paths/register --respawn --transpile-only src/server.ts",
     "build": "tsc",
     "test": "jest",
-    "migrate:latest": "knex migrate:latest"
+    "migrate:latest": "node -r ts-node/register ../../node_modules/knex/bin/cli.js migrate:latest"
   },
   "keywords": [],
   "author": "",
