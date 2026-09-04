@@ -24,7 +24,7 @@ GET {{baseUrl}}/api/backup/history
 Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
-### 2️⃣ تشغيل نسخة احتياطية على جهاز محلي
+### 2️⃣ تشغيل نسخة احتياطية على جهاز محلي (مسار افتراضي)
 POST {{baseUrl}}/api/backup/run
 Authorization: Bearer {{authToken}}
 Content-Type: application/json
@@ -35,6 +35,18 @@ Content-Type: application/json
 }
 
 
+### 2️⃣.1 تشغيل نسخة احتياطية على مجلد مخصص محلي أو فلاشة
+POST {{baseUrl}}/api/backup/run
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "destination": "local_device",
+  "kind": "manual",
+  "target_path": "E:/MyCustomClinicBackups"
+}
+
+
 ### 3️⃣ تشغيل نسخة احتياطية على USB
 POST {{baseUrl}}/api/backup/run
 Authorization: Bearer {{authToken}}
@@ -42,7 +54,8 @@ Content-Type: application/json
 
 {
   "destination": "usb",
-  "kind": "manual"
+  "kind": "manual",
+  "target_path": "F:/USB_Backup_Folder"
 }
 
 

@@ -11,6 +11,7 @@ export const runBackupSchema = z.object({
   kind: z.enum(BACKUP_KIND).default('manual'),
   fail_reason: z.enum(BACKUP_FAIL_REASON).optional(),
   force_fail: z.boolean().optional(),
+  target_path: z.string().trim().optional(),
 });
 
 export type RunBackupInput = z.infer<typeof runBackupSchema>;

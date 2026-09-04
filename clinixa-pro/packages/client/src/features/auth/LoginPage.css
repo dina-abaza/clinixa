@@ -1,0 +1,5 @@
+/*
+  ستايل خاص بشاشة تسجيل الدخول بس — باقي كل شيء من styles/tokens.css.
+  منسوخ من prototype/screens/auth/01-login.html.
+*/
+.login-screen .stack { max-width: 430px; }

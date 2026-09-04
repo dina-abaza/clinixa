@@ -1,0 +1,54 @@
+/*
+  ستايل خاص بشاشة إعداد أول تشغيل بس — باقي كل شيء من styles/tokens.css.
+  منسوخ من prototype/screens/auth/00-first-run-setup.html (الـ<style> المحلي)
+  ومحطوط جوّا .setup-screen عشان ميتصادمش مع شاشات تانية (تسجيل الدخول
+  مثلًا بيشارك .stack/.card من tokens.css بس مالوش .steps/.pane/.two).
+*/
+.setup-screen .stack { max-width: 480px; }
+
+/* .icon-badge نُقل لـ styles/tokens.css — بقى مستخدم في أكتر من شاشة
+   (إعداد أول تشغيل + استرجاع كلمة السر) */
+
+/* حالة النجاح بتاخد الكارت كله */
+.setup-screen .done { display: none; text-align: center; }
+.setup-screen .done.on { display: block; }
+.setup-screen .done .icon-badge { margin-inline: auto; background: var(--color-nav-active-bg); color: var(--color-status-success-text); }
+.setup-screen .done h1 { margin-bottom: var(--space-2); }
+.setup-screen .done p { color: var(--color-text-auth-secondary); font-size: var(--text-body-sm); margin: 0 0 var(--space-6); }
+
+/* ملخّص السؤال المحفوظ جوّا حالة النجاح */
+.setup-screen .recap {
+  text-align: start; padding: var(--space-4); border-radius: var(--radius-md);
+  background: var(--color-row-hover); border: 1px solid var(--color-border-subtle);
+  margin-bottom: var(--space-6);
+}
+.setup-screen .recap dt { font-size: var(--text-caption); color: var(--color-text-auth-secondary); margin-bottom: 2px; }
+.setup-screen .recap dd { margin: 0; font-size: var(--text-body); font-weight: 700; line-height: 1.5; }
+
+/* خطوات الإعداد */
+.setup-screen .steps { display: flex; align-items: center; gap: 6px; margin-bottom: var(--space-5); }
+.setup-screen .steps .st {
+  flex: 1; height: 4px; border-radius: var(--radius-full);
+  background: var(--color-border-subtle); transition: background .2s ease;
+}
+.setup-screen .steps .st.on   { background: var(--color-action-primary-default); }
+.setup-screen .steps .st.done { background: var(--color-status-success-text); }
+.setup-screen .step-lbl { font-size: var(--text-caption); color: var(--color-text-secondary); margin-bottom: var(--space-2); }
+.setup-screen .wiz-foot { display: flex; gap: var(--space-3); margin-top: var(--space-5); }
+.setup-screen .wiz-foot .btn { flex: 1; }
+.setup-screen .wiz-foot .btn.back { flex: 0 0 auto; width: auto; padding-inline: var(--space-6); }
+
+/* الحقول تحت بعض في كل الخطوات (قرار 254) — استثناء واحد: مواعيد العمل
+   من/إلى (.two.side)، طرفَي فترة واحدة مش حقلين مستقلين */
+.setup-screen .two { display: grid; grid-template-columns: 1fr; gap: var(--space-3); }
+.setup-screen .two.side { grid-template-columns: 1fr 1fr; align-items: start; }
+@media (max-width: 520px) { .setup-screen .two.side { grid-template-columns: 1fr; } }
+.setup-screen .key-input { font-family: var(--font-en); letter-spacing: .12em; text-transform: uppercase; font-weight: 700; }
+
+/* الرقم بيفضل dir=ltr عشان الأرقام تتقري صح، بس محاذاته بتتبع الصفحة */
+html[dir="rtl"] .setup-screen #clinicPh,
+html[dir="rtl"] .setup-screen #clinicFrom, html[dir="rtl"] .setup-screen #clinicTo { text-align: right; }
+html[dir="ltr"] .setup-screen #clinicPh,
+html[dir="ltr"] .setup-screen #clinicFrom, html[dir="ltr"] .setup-screen #clinicTo { text-align: left; }
+.setup-screen #clinicFrom::-webkit-calendar-picker-indicator,
+.setup-screen #clinicTo::-webkit-calendar-picker-indicator { margin-inline-start: var(--space-2); }

@@ -1,11 +1,45 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain } from 'electron';
 import path from 'path';
+import fs from 'fs';
 import { startEmbeddedServer } from './server-bootstrap';
+import { startEmbeddedClient } from './client-bootstrap';
 
 let mainWindow: BrowserWindow | null = null;
 let serverProcess: ReturnType<typeof startEmbeddedServer> | null = null;
+let clientProcess: ReturnType<typeof startEmbeddedClient> | null = null;
 
-const isDev = process.env.NODE_ENV === 'development';
+const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
+
+// معالج فتح نافذة اختيار المجلد لنظام التشغيل
+ipcMain.handle('dialog:select-folder', async (_event, defaultPath?: string) => {
+  if (!mainWindow) return null;
+  const result = await dialog.showOpenDialog(mainWindow, {
+    properties: ['openDirectory', 'createDirectory'],
+    defaultPath: defaultPath || undefined,
+    title: 'تحديد مجلد النسخ الاحتياطي',
+    buttonLabel: 'تحديد المجلد',
+  });
+  if (result.canceled || result.filePaths.length === 0) {
+    return null;
+  }
+  return result.filePaths[0];
+});
+
+async function loadDevURL(win: BrowserWindow, url: string, maxRetries = 20): Promise<void> {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      await win.loadURL(url);
+      return;
+    } catch {
+      await new Promise((resolve) => setTimeout(resolve, 800));
+    }
+  }
+
+  const clientDist = path.resolve(__dirname, '../../client/dist/index.html');
+  if (fs.existsSync(clientDist)) {
+    win.loadFile(clientDist);
+  }
+}
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -21,11 +55,14 @@ function createWindow(): void {
     },
   });
 
+  const clientDist = path.resolve(__dirname, '../../client/dist/index.html');
+
   if (isDev) {
-    mainWindow.loadURL('http://localhost:5173');
+    loadDevURL(mainWindow, 'http://localhost:5173');
   } else {
-    const clientDist = path.resolve(__dirname, '../../client/dist');
-    mainWindow.loadFile(path.join(clientDist, 'index.html'));
+    if (fs.existsSync(clientDist)) {
+      mainWindow.loadFile(clientDist);
+    }
   }
 
   mainWindow.on('closed', () => {
@@ -34,7 +71,14 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
+  // تشغيل السيرفر الخلفي
   serverProcess = startEmbeddedServer();
+
+  // تشغيل سيرفر الفرونت إند في بيئة التطوير
+  if (isDev) {
+    clientProcess = startEmbeddedClient();
+  }
+
   createWindow();
 
   app.on('activate', () => {
@@ -44,10 +88,19 @@ app.whenReady().then(() => {
   });
 });
 
-app.on('window-all-closed', () => {
+function cleanupProcesses(): void {
   if (serverProcess) {
     serverProcess.kill();
+    serverProcess = null;
   }
+  if (clientProcess) {
+    clientProcess.kill();
+    clientProcess = null;
+  }
+}
+
+app.on('window-all-closed', () => {
+  cleanupProcesses();
 
   if (process.platform !== 'darwin') {
     app.quit();
@@ -55,7 +108,5 @@ app.on('window-all-closed', () => {
 });
 
 app.on('before-quit', () => {
-  if (serverProcess) {
-    serverProcess.kill();
-  }
+  cleanupProcesses();
 });

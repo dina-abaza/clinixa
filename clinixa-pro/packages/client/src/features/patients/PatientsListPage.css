@@ -1,0 +1,51 @@
+/* ═══ خاص بشاشة المرضى — نفس تقسيم البروتوتايب (prototype/screens/patients/03-patients-list.html)
+   بس بأعمدة العقد الفعلي بس (لا فرع/زيارات/آخر زيارة — مش موجودين في clinixa-api-reference.md §2) ═══ */
+
+#patientsTable .c-check  { width: 4%; }
+#patientsTable .c-name   { width: 41%; }
+#patientsTable .c-age    { width: 8%; }
+#patientsTable .c-phone  { width: 15%; }
+#patientsTable .c-status { width: 13%; }
+#patientsTable .c-due    { width: 13%; }
+#patientsTable .c-act    { width: 6%; }
+
+#patientsTable thead th.c-age,
+#patientsTable thead th.c-status,
+#patientsTable thead th.c-due,
+#patientsTable td.c-age,
+#patientsTable td.c-status,
+#patientsTable td.c-due { text-align: center; }
+
+/* الأعمدة الأساسية (الاسم + الهاتف + المستحقات) ما بتتخفيش — نفس مبدأ tokens.css §12 */
+@media (max-width: 1080px) { #patientsTable .c-age { display: none; } }
+@media (max-width: 860px)  { #patientsTable .c-status { display: none; } }
+
+/* رأس الجدول مبقاش حافة الكارت العليا — العنوان جوّه الكارت مش فوقه */
+#patientsTable thead th:first-child,
+#patientsTable thead th:last-child { border-start-start-radius: 0; border-start-end-radius: 0; }
+
+/* الصف كله قابل للدوس (قرار 186) — اسم الكلاس clickable-row مش row-link (محجوز في tokens.css) */
+#patientsTable tbody tr.clickable-row { cursor: pointer; }
+#patientsTable tbody tr.clickable-row:hover .pname { text-decoration: underline; }
+#patientsTable tbody tr.clickable-row .cbx-hit,
+#patientsTable tbody tr.clickable-row .row-menu-btn { cursor: pointer; }
+
+/* قايمة أفعال الصف أضيق من قوايم الـ Top Bar، وبتفتح لفوق عشان ما تخرجش برّه منطقة المحتوى */
+.dropdown.compact { min-width: 208px; }
+.dropdown.compact .menu-item { padding-block: 9px; align-items: center; }
+.dropdown.compact .menu-item svg { margin-top: 0; }
+.dropdown.up { top: auto; bottom: calc(100% + var(--space-2)); }
+
+/* الشريط الجماعي جوّه الكارت — محتاج حشو جانبي عشان مايلزقش في الحافة */
+.table-card > .bulk-bar { margin: var(--space-3) var(--space-4); }
+
+/* ═══ Modal مريض جديد ═══ */
+.np-modal { max-width: 640px; width: 100%; }
+.np-body { max-height: min(58vh, 520px); overflow-y: auto; padding-inline-end: var(--space-2); }
+.np-sec {
+  font-size: var(--text-body-sm); font-weight: 800; margin: var(--space-5) 0 var(--space-3);
+  padding-top: var(--space-4); border-top: 1px solid var(--color-border-subtle);
+}
+.np-body > .np-sec:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+.np-sec-sub { font-size: var(--text-caption); color: var(--color-text-secondary); margin: calc(var(--space-3) * -1) 0 var(--space-3); }
+.np-req { color: var(--color-status-error-text); font-weight: 700; margin-inline-start: 2px; }

@@ -1,0 +1,10 @@
+/* ═══ جدول الحضور — نفس تقسيم شاشات القوائم في tokens.css §10 ═══ */
+#attendanceTable .c-name   { width: 55%; }
+#attendanceTable .c-time   { width: 12%; text-align: center; }
+#attendanceTable .c-status { width: 15%; text-align: center; }
+#attendanceTable .c-act    { width: 18%; }
+
+#attendanceTable thead th:first-child,
+#attendanceTable thead th:last-child { border-start-start-radius: 0; border-start-end-radius: 0; }
+
+@media (max-width: 640px) { #attendanceTable .c-time { display: none; } }

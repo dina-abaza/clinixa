@@ -185,7 +185,10 @@ export async function runBackup(input: RunBackupInput): Promise<BackupRecord> {
   // 1. النسخ المحلي أو عبر USB (مشفر بـ AES-256-GCM)
   if (!isFail && (destination === 'local_device' || destination === 'usb')) {
     try {
-      const backupRoot = path.resolve(__dirname, '../../..', 'data', 'backups');
+      const backupRoot =
+        input.target_path && input.target_path.trim().length > 0
+          ? path.resolve(input.target_path.trim())
+          : path.resolve(__dirname, '../../..', 'data', 'backups');
       fs.mkdirSync(backupRoot, { recursive: true });
 
       const dbSource = path.resolve(__dirname, '../../..', 'data', 'clinixa.db');

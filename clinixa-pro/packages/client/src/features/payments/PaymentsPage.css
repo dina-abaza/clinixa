@@ -1,0 +1,18 @@
+/* ═══ جدول المستحقات — نفس تقسيم شاشات القوائم في tokens.css §10 ═══ */
+#outstandingTable .c-name { width: 50%; }
+#outstandingTable .c-last { width: 22%; text-align: center; }
+#outstandingTable .c-due  { width: 16%; text-align: center; }
+#outstandingTable .c-act  { width: 12%; }
+
+#outstandingTable thead th:first-child,
+#outstandingTable thead th:last-child { border-start-start-radius: 0; border-start-end-radius: 0; }
+
+@media (max-width: 640px) { #outstandingTable .c-last { display: none; } }
+
+/* ═══ جدول جاهزين للتحصيل ═══ */
+#readyTable .c-name { width: 62%; }
+#readyTable .c-due  { width: 22%; text-align: center; }
+#readyTable .c-act  { width: 16%; }
+
+#readyTable thead th:first-child,
+#readyTable thead th:last-child { border-start-start-radius: 0; border-start-end-radius: 0; }

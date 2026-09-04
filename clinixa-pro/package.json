@@ -1,12 +1,18 @@
 {
   "name": "clinixa",
   "private": true,
-  "workspaces": ["packages/*"],
+  "workspaces": [
+    "packages/*"
+  ],
   "version": "1.0.0",
-  "description": "",
+  "description": "Clinixa Clinic Management System",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "npm run dev --workspace=electron",
+    "dev:server": "npm run dev --workspace=server",
+    "dev:client": "npm run dev --workspace=client",
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspace=server"
   },
   "keywords": [],
   "author": "",

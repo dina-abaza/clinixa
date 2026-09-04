@@ -1,0 +1,16 @@
+/* ═══ تبويب "الحركة المالية" في ملف المريض — رسوم + مدفوعات ═══ */
+.fin-actions { display: flex; gap: var(--space-2); margin-bottom: var(--space-5); flex-wrap: wrap; }
+.fin-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--space-5); }
+
+.fin-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2); }
+.fin-row {
+  display: flex; align-items: center; gap: var(--space-3);
+  padding-bottom: var(--space-2); border-bottom: 1px solid var(--color-border-subtle);
+  font-size: var(--text-body-sm);
+}
+.fin-row:last-child { border-bottom: none; padding-bottom: 0; }
+.fin-row .fin-txt { flex: 1; min-width: 0; }
+.fin-row .fin-date { display: block; font-size: var(--text-caption); color: var(--color-text-secondary); }
+.fin-row .fin-amt { font-weight: 700; white-space: nowrap; }
+.fin-row .fin-amt.debit { color: var(--color-status-error-text); }
+.fin-row .fin-amt.credit { color: var(--color-status-success-text); }
