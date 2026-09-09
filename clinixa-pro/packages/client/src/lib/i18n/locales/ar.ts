@@ -52,7 +52,7 @@ export const ar = {
       specialtyPlaceholder: '— اختر التخصص —',
       specialtyError: 'اختر تخصص العيادة',
       phoneLabel: 'تليفون العيادة',
-      phonePlaceholder: '0225551234',
+      phonePlaceholder: '01012345678',
       phoneError: 'رقم الهاتف لازم يكون ١١ رقم ويبدأ بـ 010/011/012/015',
       addressLabel: 'عنوان العيادة',
       addressPlaceholder: 'الشارع، المنطقة، المحافظة',
