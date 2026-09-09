@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { getSession } from '../lib/api/auth';
 import { setAuthToken } from '../lib/api/client';
 import { useAuthStore } from '../lib/store/authStore';
+import { SystemSplashLoader } from '../components/common/SystemSplashLoader';
 
 /**
  * بوابة استرجاع الجلسة — بتتشغّل مرة واحدة عند فتح التطبيق. لو فيه توكن
@@ -50,20 +51,7 @@ export function SessionBoundary({ children }: { children: ReactNode }) {
   }, [hydrated, token, setSession, setStatus, clearSession]);
 
   if (!hydrated || status === 'idle' || status === 'restoring') {
-    return (
-      <div
-        style={{
-          display: 'grid',
-          placeItems: 'center',
-          height: '100vh',
-          background: 'var(--color-background-canvas)',
-        }}
-      >
-        <svg width={32} height={32} className="spinner" style={{ display: 'block', color: 'var(--color-action-primary-default)' }}>
-          <use href="#i-loader" />
-        </svg>
-      </div>
-    );
+    return <SystemSplashLoader />;
   }
 
   return <>{children}</>;

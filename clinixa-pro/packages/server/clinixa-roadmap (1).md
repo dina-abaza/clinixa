@@ -232,6 +232,29 @@
 
 ---
 
+### المرحلة ١١ — الداش بورد (Dashboard) (يوم واحد)
+
+- [✅] `modules/dashboard/dashboard.repository.ts` — استعلامات الإحصائيات (حضور اليوم، المرضى في الانتظار، إجمالي التحصيل، نواقص المخزون)
+- [✅] `modules/dashboard/dashboard.service.ts` — تجميع البيانات للواجهة الرئيسية
+- [✅] `modules/dashboard/dashboard.controller.ts` + `dashboard.routes.ts`
+- [✅] دمج المسارات في `app.ts`
+
+---
+
+### المرحلة ١٢ — نظام التراخيص والحماية والتحقق الشهري (Challenge-Response Licensing) (يوم واحد)
+
+> **الهدف:** حماية النظام من النسخ والسرقة، وتطبيق آلية تجديد شهرية غير قابلة للتلاعب (Offline Challenge-Response) بدون الحاجة لاتصال دائم بالإنترنت.
+
+- [✅] `modules/license/license.fingerprint.ts` — استخراج بصمة عتاد فريدة ومستقرة للجهاز (Hardware / Machine Fingerprint).
+- [✅] `modules/license/license.crypto.ts` — محرك التشفير الرياضي للتحدي والاستجابة بـ HMAC-SHA256 + حماية التلاعب بتاريخ النظام (Anti-Clock Tampering).
+- [✅] `modules/license/license.service.ts` — إدارة حالة الترخيص وتوليد التحدي والتحقق من كود التفعيل الشهري.
+- [✅] `modules/license/license.controller.ts` + `license.routes.ts` — مسارات `GET /api/license/status` و `POST /api/license/activate`.
+- [✅] `modules/license/license.middleware.ts` — حارس التحقق لمنع العمليات عند انتهاء الاشتراك مع السماح بمسارات التجديد.
+- [✅] `license-keygen.js` في جذر المشروع — أداة المالك لتوليد أكواد التفعيل الشهرية عند استلام كود التحدي من العميل.
+
+
+---
+
 ## ✅ متى نقدر نقول "المشروع خلص بالكامل"؟
 
 | بعد                           | الحالة                                                                                          |

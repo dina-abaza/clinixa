@@ -3,7 +3,7 @@ import { IconSprite } from './components/icons/IconSprite';
 import { FirstRunSetupPage } from './features/setup/FirstRunSetupPage';
 import { LoginPage } from './features/auth/LoginPage';
 import { ForgotPasswordPage } from './features/auth/ForgotPasswordPage';
-import { DashboardPlaceholderPage } from './pages/DashboardPlaceholderPage';
+import { DashboardPage } from './features/dashboard/DashboardPage';
 import { SessionBoundary } from './app/SessionBoundary';
 import { ProtectedRoute } from './app/ProtectedRoute';
 import { RootRedirect } from './app/RootRedirect';
@@ -36,7 +36,7 @@ function App() {
 
           <Route element={<ProtectedRoute />}>
             <Route element={<AppShell />}>
-              <Route path="/dashboard" element={<DashboardPlaceholderPage />} />
+              <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/patients" element={<PatientsListPage />} />
               <Route path="/patients/:id" element={<PatientProfilePage />} />
               <Route path="/attendance" element={<AttendancePage />} />

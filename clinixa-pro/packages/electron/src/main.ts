@@ -25,6 +25,25 @@ ipcMain.handle('dialog:select-folder', async (_event, defaultPath?: string) => {
   return result.filePaths[0];
 });
 
+// معالج فتح نافذة اختيار ملف النسخة الاحتياطية لنظام التشغيل
+ipcMain.handle('dialog:select-file', async (_event, defaultPath?: string) => {
+  if (!mainWindow) return null;
+  const result = await dialog.showOpenDialog(mainWindow, {
+    properties: ['openFile'],
+    defaultPath: defaultPath || undefined,
+    filters: [
+      { name: 'ملفات النسخ الاحتياطي لـ Clinixa (*.encrypted, *.db, *.json)', extensions: ['encrypted', 'db', 'json'] },
+      { name: 'جميع الملفات (*.*)', extensions: ['*'] },
+    ],
+    title: 'تحديد ملف النسخة الاحتياطية للاستعادة',
+    buttonLabel: 'اختيار ملف النسخة',
+  });
+  if (result.canceled || result.filePaths.length === 0) {
+    return null;
+  }
+  return result.filePaths[0];
+});
+
 async function loadDevURL(win: BrowserWindow, url: string, maxRetries = 20): Promise<void> {
   for (let i = 0; i < maxRetries; i++) {
     try {

@@ -201,21 +201,21 @@ export async function runBackup(input: RunBackupInput): Promise<BackupRecord> {
 
       fs.mkdirSync(backupDir, { recursive: true });
 
-      const driveSettings = await query('google_drive_settings').where({ id: 'singleton' }).first();
-      const clinicSettings = await query('clinic_settings').where({ id: 'singleton' }).first();
-      const encPassword =
-        (input as any).backup_password ||
-        driveSettings?.backup_password ||
-        clinicSettings?.license_key ||
-        'ClinixaBackupKey2026';
+      const customPassword = input.backup_password?.trim();
 
       if (fs.existsSync(dbSource)) {
-        const dbBuffer = fs.readFileSync(dbSource);
-        const encryptedPayload = encryptBuffer(dbBuffer, encPassword);
-        fs.writeFileSync(
-          path.join(backupDir, 'clinixa.db.encrypted'),
-          JSON.stringify(encryptedPayload)
-        );
+        if (customPassword && customPassword.length > 0) {
+          // 🔒 تشفير بالكامل بكلمة السر المحددة من المستخدم
+          const dbBuffer = fs.readFileSync(dbSource);
+          const encryptedPayload = encryptBuffer(dbBuffer, customPassword);
+          fs.writeFileSync(
+            path.join(backupDir, 'clinixa.db.encrypted'),
+            JSON.stringify(encryptedPayload)
+          );
+        } else {
+          // 📄 حفظ ملف قاعدة بيانات مباشر غير مشفر (Raw SQLite Database)
+          fs.copyFileSync(dbSource, path.join(backupDir, 'clinixa.db'));
+        }
       }
 
       if (fs.existsSync(attachmentsSource)) {
@@ -382,27 +382,237 @@ export async function updateBackupDestination(
 }
 
 /**
- * @description استعادة البيانات من نسخة احتياطية بعد التحقق من كلمة التأكيد
- * @param {RestoreBackupInput} input - نص التأكيد ومعرّف النسخة وكلمة سر التشفير
+ * @description استعادة البيانات من نسخة احتياطية (من السجل الداخلي أو من ملف/مجلد مخصص على الجهاز أو USB)
+ * @param {RestoreBackupInput} input - خيارات الاستعادة والتأكيد والمسار وكلمة السر
  * @returns {Promise<{ message: string }>} رسالة نجاح الاستعادة
- * @throws {AppError} 400 VALIDATION_ERROR إذا لم يطابق نص التأكيد
+ * @throws {AppError} في حال عدم تطابق التأكيد أو عدم وجود الملف أو خطأ فك التشفير
  */
 export async function restoreBackup(
   input: RestoreBackupInput
 ): Promise<{ message: string }> {
   const allowedTexts = ['RESTORE', 'CONFIRM', 'استعادة', 'تأكيد'];
   if (!allowedTexts.includes(input.confirmation_text.trim())) {
-    throw new AppError('VALIDATION_ERROR', 'كلمة تأكيد الاستعادة غير صحيحة', 400, 'confirmation_text');
+    throw new AppError('VALIDATION_ERROR', 'كلمة تأكيد الاستعادة غير صحيحة (اكتب RESTORE أو استعادة)', 400, 'confirmation_text');
   }
 
-  if (input.backup_id) {
-    const record = await query('backup_history').where({ id: input.backup_id }).first();
-    if (!record) {
-      throw new AppError('NOT_FOUND', 'النسخة الاحتياطية المحددة غير موجودة', 404);
+  let dbFilePath: string | null = null;
+  let attachmentsDirPath: string | null = null;
+
+  // 1. تحديد مسار ملف النسخة الاحتياطية ومجلد المرفقات
+  if (input.source_mode === 'custom_path' || (input.custom_path && input.custom_path.trim().length > 0)) {
+    if (!input.custom_path || input.custom_path.trim().length === 0) {
+      throw new AppError('VALIDATION_ERROR', 'يرجى تحديد مسار ملف أو مجلد النسخة الاحتياطية للاستعادة', 400, 'custom_path');
+    }
+
+    const resolved = path.resolve(input.custom_path.trim());
+    if (!fs.existsSync(resolved)) {
+      throw new AppError('NOT_FOUND', 'المسار أو الملف المحدد للنسخة الاحتياطية غير موجود على القرص', 404);
+    }
+
+    const stat = fs.statSync(resolved);
+    if (stat.isDirectory()) {
+      // إذا اختار مجلد كامل: نبحث عن clinixa.db.encrypted أو clinixa.db
+      const encDbPath = path.join(resolved, 'clinixa.db.encrypted');
+      const rawDbPath = path.join(resolved, 'clinixa.db');
+      const jsonEncPath = path.join(resolved, 'backup.encrypted.json');
+
+      if (fs.existsSync(encDbPath)) {
+        dbFilePath = encDbPath;
+      } else if (fs.existsSync(rawDbPath)) {
+        dbFilePath = rawDbPath;
+      } else if (fs.existsSync(jsonEncPath)) {
+        dbFilePath = jsonEncPath;
+      } else {
+        // ابحث عن أي ملف ينتهي بـ .encrypted أو .db داخل المجلد
+        const files = fs.readdirSync(resolved);
+        const candidate = files.find((f) => f.endsWith('.encrypted') || f.endsWith('.db'));
+        if (candidate) {
+          dbFilePath = path.join(resolved, candidate);
+        } else {
+          throw new AppError('NOT_FOUND', 'لم يتم العثور على ملف قاعدة بيانات صالح (clinixa.db.encrypted أو clinixa.db) داخل المجلد المحدد', 404);
+        }
+      }
+
+      const possibleAttachments = path.join(resolved, 'attachments');
+      if (fs.existsSync(possibleAttachments) && fs.statSync(possibleAttachments).isDirectory()) {
+        attachmentsDirPath = possibleAttachments;
+      }
+    } else if (stat.isFile()) {
+      dbFilePath = resolved;
+      const parentDir = path.dirname(resolved);
+      const possibleAttachments = path.join(parentDir, 'attachments');
+      if (fs.existsSync(possibleAttachments) && fs.statSync(possibleAttachments).isDirectory()) {
+        attachmentsDirPath = possibleAttachments;
+      }
+    }
+  } else {
+    // 2. الاستعادة من السجل الداخلي (History)
+    let record: any = null;
+    if (input.backup_id) {
+      record = await query('backup_history').where({ id: input.backup_id }).first();
+      if (!record) {
+        throw new AppError('NOT_FOUND', 'النسخة الاحتياطية المحددة غير موجودة في سجل النظام', 404);
+      }
+    } else {
+      record = await query('backup_history')
+        .where({ status: 'ok' })
+        .whereIn('destination', ['local_device', 'usb'])
+        .orderBy('date', 'desc')
+        .orderBy('time', 'desc')
+        .first();
+
+      if (!record) {
+        throw new AppError('NOT_FOUND', 'لا توجد أي نسخة احتياطية محلية ناجحة مسجلة في سجل النظام', 404);
+      }
+    }
+
+    const defaultBackupsRoot = path.resolve(__dirname, '../../..', 'data', 'backups');
+    const folderName = `${record.date}_${String(record.time).replace(/:/g, '-')}`;
+    const backupFolder = path.join(defaultBackupsRoot, folderName);
+
+    if (!fs.existsSync(backupFolder)) {
+      throw new AppError('NOT_FOUND', `مجلد النسخة الاحتياطية (${folderName}) غير موجود على القرص المحلي`, 404);
+    }
+
+    const encDb = path.join(backupFolder, 'clinixa.db.encrypted');
+    const rawDb = path.join(backupFolder, 'clinixa.db');
+    if (fs.existsSync(encDb)) {
+      dbFilePath = encDb;
+    } else if (fs.existsSync(rawDb)) {
+      dbFilePath = rawDb;
+    } else {
+      throw new AppError('NOT_FOUND', 'ملف قاعدة البيانات غير موجود داخل مجلد النسخة الاحتياطية', 404);
+    }
+
+    const attachPath = path.join(backupFolder, 'attachments');
+    if (fs.existsSync(attachPath) && fs.statSync(attachPath).isDirectory()) {
+      attachmentsDirPath = attachPath;
     }
   }
 
+  if (!dbFilePath || !fs.existsSync(dbFilePath)) {
+    throw new AppError('NOT_FOUND', 'تعذر العثور على ملف النسخة الاحتياطية المراد استعادتها', 404);
+  }
+
+  // 3. قراءة وفك تشفير محتوى قاعدة البيانات
+  const fileContent = fs.readFileSync(dbFilePath);
+  let decryptedBuffer: Buffer | null = null;
+
+  // جلب كلمات السر المحتملة للتجربة في حال عدم تمرير كلمة سر صريحة
+  const driveSettings = await query('google_drive_settings').where({ id: 'singleton' }).first();
+  const clinicSettings = await query('clinic_settings').where({ id: 'singleton' }).first();
+  const candidatePasswords = [
+    input.backup_password?.trim(),
+    'ClinixaBackupKey2026',
+    driveSettings?.backup_password,
+    clinicSettings?.license_key,
+    'CLX-001M-5356-BF88-A8D1',
+    'CLX-002I-55DB-2593-A3F9',
+    'CLX-005I-4786-E5EA-143F',
+    'CLX-010I-105F-0722-9A12',
+    'CLX-003I-79D5-4BA8-3E42',
+    'CLX-0000-0000-0000',
+    'CLINIXA_SECURE_OFFLINE_SECRET_2026_MASTER_SIGNATURE_KEY_#99201',
+  ].filter((p): p is string => Boolean(p && p.length > 0));
+
+  const textStart = fileContent.slice(0, 100).toString('utf8').trim();
+  const isJsonEncrypted = textStart.startsWith('{') && textStart.includes('clinixa-encrypted-backup-v1');
+
+  if (isJsonEncrypted) {
+    let payload: EncryptedBackupPayload;
+    try {
+      payload = JSON.parse(fileContent.toString('utf8'));
+    } catch {
+      throw new AppError('VALIDATION_ERROR', 'ملف النسخة الاحتياطية المشفر تالف ولا يمكن قراءته', 400);
+    }
+
+    let success = false;
+    for (const pwd of candidatePasswords) {
+      try {
+        decryptedBuffer = decryptBuffer(payload, pwd);
+        success = true;
+        break;
+      } catch {
+        // تجربة الكلمة التالية
+      }
+    }
+
+    if (!success || !decryptedBuffer) {
+      throw new AppError(
+        'VALIDATION_ERROR',
+        'فشل فك تشفير النسخة الاحتياطية! يرجى التأكد من إدخال كلمة سر النسخة الاحتياطية الصحيحة.',
+        400
+      );
+    }
+  } else {
+    // ملف قاعدة بيانات غير مشفر (Raw SQLite Database)
+    decryptedBuffer = fileContent;
+  }
+
+  // التحقق من ترويسة SQLite الرسمية ("SQLite format 3\0")
+  const sqliteHeader = decryptedBuffer.slice(0, 16).toString('utf8');
+  if (!sqliteHeader.startsWith('SQLite format 3')) {
+    throw new AppError(
+      'VALIDATION_ERROR',
+      'الملف الناتج ليس قاعدة بيانات SQLite صالحة تابعة لـ Clinixa',
+      400
+    );
+  }
+
+  // 4. استبدال قاعدة البيانات النشطة وتحديث المرفقات
+  const targetDbPath = path.resolve(__dirname, '../../..', 'data', 'clinixa.db');
+  const tempRestorePath = `${targetDbPath}.restoring_tmp`;
+
+  try {
+    fs.writeFileSync(tempRestorePath, decryptedBuffer);
+
+    // حذف ملفات الـ WAL المؤقتة إن وُجدت لمنع التعارض
+    const walPath = `${targetDbPath}-wal`;
+    const shmPath = `${targetDbPath}-shm`;
+    if (fs.existsSync(walPath)) {
+      try { fs.unlinkSync(walPath); } catch {}
+    }
+    if (fs.existsSync(shmPath)) {
+      try { fs.unlinkSync(shmPath); } catch {}
+    }
+
+    // استبدال الملف الأساسي
+    fs.copyFileSync(tempRestorePath, targetDbPath);
+    try { fs.unlinkSync(tempRestorePath); } catch {}
+
+    // استعادة المرفقات إن وُجدت
+    if (attachmentsDirPath && fs.existsSync(attachmentsDirPath)) {
+      const targetAttachments = path.resolve(__dirname, '../../..', 'data', 'attachments');
+      fs.mkdirSync(targetAttachments, { recursive: true });
+      fs.cpSync(attachmentsDirPath, targetAttachments, { recursive: true });
+    }
+  } catch (restoreErr: any) {
+    try {
+      if (fs.existsSync(tempRestorePath)) fs.unlinkSync(tempRestorePath);
+    } catch {}
+    throw new AppError(
+      'INTERNAL_ERROR',
+      `فشلت كتابة قاعدة البيانات المستعادة: ${restoreErr?.message || 'خطأ غير معروف'}`,
+      500
+    );
+  }
+
+  // 5. تسجيل تنبيه استعادة ناجحة في النظام
+  try {
+    const alertId = `alt_${crypto.randomUUID()}`;
+    await query('system_alerts').insert({
+      id: alertId,
+      type: 'system_restored',
+      title: 'تمت استعادة نسخة احتياطية بنجاح',
+      detail: `تم استعادة قاعدة بيانات النظام بنجاح في ${new Date().toLocaleString('ar-EG')}`,
+      branch_id: null,
+      is_read: 0,
+    });
+  } catch {
+    // تجاهل أخطاء التنبيه إن كان الاتصال يستلزم ريستارت
+  }
+
   return {
-    message: 'تمت استعادة النسخة الاحتياطية بنجاح',
+    message: 'تمت استعادة قاعدة البيانات والنسخة الاحتياطية بنجاح.',
   };
 }

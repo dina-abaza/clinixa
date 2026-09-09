@@ -9,6 +9,7 @@ export interface RunBackupRequest {
   destination: BackupDestination;
   kind?: BackupKind;
   target_path?: string;
+  backup_password?: string;
 }
 
 export interface RunBackupResponseData {
@@ -60,7 +61,10 @@ export async function setBackupDestination(
 
 export interface RestoreBackupRequest {
   confirmation_text: string;
+  source_mode?: 'history' | 'custom_path';
   backup_id?: string;
+  custom_path?: string;
+  backup_password?: string;
 }
 
 export async function restoreBackup(payload: RestoreBackupRequest): Promise<ApiResponse<{ message: string }>> {

@@ -13,6 +13,7 @@ import {
 } from './schema';
 import { LICENSE_KEY_RE } from '../../lib/validation/licenseKey';
 import { postFirstRunSetup, type FirstRunSetupRequest } from '../../lib/api/setup';
+import { verifySetupKey } from '../../lib/api/license';
 import { setAuthToken } from '../../lib/api/client';
 import { markSetupComplete } from '../../lib/setupState';
 import { ar } from '../../lib/i18n/locales/ar';
@@ -71,7 +72,20 @@ export function FirstRunSetupPage() {
   async function handleNext() {
     const fields = STEP_FIELDS[step];
     const valid = await trigger(fields);
-    if (valid) setStep((s) => Math.min(TOTAL_STEPS, s + 1));
+    if (!valid) return;
+
+    if (step === 1) {
+      const keyCheck = await verifySetupKey(watch('licenseKey'));
+      if (!keyCheck.ok) {
+        setError('licenseKey', {
+          type: 'manual',
+          message: t('setup.license.errorInvalid'),
+        });
+        return;
+      }
+    }
+
+    setStep((s) => Math.min(TOTAL_STEPS, s + 1));
   }
 
   function handleBack() {

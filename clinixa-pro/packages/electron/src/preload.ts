@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer, webUtils } from 'electron';
 
 contextBridge.exposeInMainWorld('clinixa', {
   appInfo: {
@@ -7,6 +7,16 @@ contextBridge.exposeInMainWorld('clinixa', {
   },
   selectFolder: (defaultPath?: string): Promise<string | null> =>
     ipcRenderer.invoke('dialog:select-folder', defaultPath),
+  selectFile: (defaultPath?: string): Promise<string | null> =>
+    ipcRenderer.invoke('dialog:select-file', defaultPath),
+  getPathForFile: (file: File): string => {
+    try {
+      if (webUtils && typeof webUtils.getPathForFile === 'function') {
+        return webUtils.getPathForFile(file);
+      }
+    } catch {}
+    return (file as any).path || file.name;
+  },
 });
 
 export type ClinixaWindow = {
@@ -16,6 +26,8 @@ export type ClinixaWindow = {
       version: string;
     };
     selectFolder: (defaultPath?: string) => Promise<string | null>;
+    selectFile: (defaultPath?: string) => Promise<string | null>;
+    getPathForFile?: (file: File) => string;
   };
 };
 

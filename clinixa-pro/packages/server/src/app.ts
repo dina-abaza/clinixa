@@ -17,6 +17,9 @@ import backupRoutes from './modules/backup/backup.routes';
 import systemAlertsRoutes from './modules/system-alerts/system-alerts.routes';
 import configRoutes from './modules/config/config.routes';
 import syncRoutes from './modules/sync/sync.routes';
+import dashboardRoutes from './modules/dashboard/dashboard.routes';
+import licenseRoutes from './modules/license/license.routes';
+import { licenseGuardMiddleware } from './modules/license/license.middleware';
 
 const app = express();
 
@@ -39,6 +42,12 @@ app.get('/health', (_req, res) => {
   });
 });
 
+// مسارات الترخيص (مفتوحة دائماً للتحقق والتجديد)
+app.use('/api/license', licenseRoutes);
+
+// حارس الترخيص الشهري لجميع باقي المسارات
+app.use(licenseGuardMiddleware);
+
 // المسارات الأساسية (Phases 1, 2, 3)
 app.use('/api/setup', setupRoutes);
 app.use('/api/auth', authRoutes);
@@ -58,6 +67,7 @@ app.use('/api/backup', backupRoutes);
 app.use('/api/system-alerts', systemAlertsRoutes);
 app.use('/api/config', configRoutes);
 app.use('/api/sync', syncRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // Middleware الأخطاء في النهاية
 app.use(errorHandler);
