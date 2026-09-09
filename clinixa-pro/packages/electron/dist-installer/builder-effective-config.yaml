@@ -1,0 +1,22 @@
+directories:
+  output: dist-installer
+  buildResources: build
+appId: com.clinixa.app
+productName: Clinixa Pro
+files:
+  - filter:
+      - dist/**/*
+      - ../client/dist/**/*
+      - ../server/dist/**/*
+      - ../shared/dist/**/*
+      - package.json
+win:
+  target:
+    - nsis
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Clinixa Pro
+electronVersion: 37.10.3

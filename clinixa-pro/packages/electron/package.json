@@ -6,15 +6,43 @@
   "scripts": {
     "build": "tsc",
     "start": "electron .",
-    "dev": "npm run build && electron ."
+    "dev": "npm run build && electron .",
+    "dist": "electron-builder --win nsis"
+  },
+  "build": {
+    "appId": "com.clinixa.app",
+    "productName": "Clinixa Pro",
+    "directories": {
+      "output": "dist-installer"
+    },
+    "files": [
+      "dist/**/*",
+      "../client/dist/**/*",
+      "../server/dist/**/*",
+      "../shared/dist/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Clinixa Pro"
+    }
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
+    "@types/node": "^24.0.0",
     "electron": "^37.3.0",
-    "typescript": "^5.6.3",
-    "@types/node": "^24.0.0"
+    "electron-builder": "^25.1.8",
+    "typescript": "^5.6.3"
   }
 }
