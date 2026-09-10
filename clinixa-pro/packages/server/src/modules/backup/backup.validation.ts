@@ -45,7 +45,7 @@ export type UpdateGoogleDriveSettingsInput = z.infer<typeof updateGoogleDriveSet
  */
 export const restoreBackupSchema = z.object({
   confirmation_text: z.string({ message: 'نص تأكيد الاستعادة مطلوب' }),
-  source_mode: z.enum(['history', 'custom_path']).default('history'),
+  source_mode: z.enum(['history', 'custom_path', 'google_drive']).default('history'),
   backup_id: z.string().optional(),
   custom_path: z.string().trim().optional(),
   backup_password: z.string().optional(),

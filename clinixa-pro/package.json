@@ -37,7 +37,8 @@
     "win": {
       "target": [
         "nsis"
-      ]
+      ],
+      "icon": "C:/temp/clinixa-icon/clinixa.ico"
     },
     "nsis": {
       "oneClick": false,
