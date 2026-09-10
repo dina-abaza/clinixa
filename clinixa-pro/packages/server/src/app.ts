@@ -24,7 +24,9 @@ import { licenseGuardMiddleware } from './modules/license/license.middleware';
 const app = express();
 
 // Middlewares الأساسية
-app.use(cors({ origin: env.CORS_ORIGIN }));
+// Electron desktop يفتح الواجهة عبر file:// داخل app.asar، وليس عبر http://localhost:5173
+// لذلك نسمح بأصل أيّ (بما فيه file://) بدل منع CORS بقاعدة ثابتة.
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(arabicNormalizeMiddleware);

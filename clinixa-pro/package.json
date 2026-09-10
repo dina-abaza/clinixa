@@ -26,6 +26,7 @@
       "packages/electron/dist/**/*",
       "packages/client/dist/**/*",
       "packages/server/dist/**/*",
+      "packages/server/.env",
       "packages/shared/dist/**/*",
       "node_modules/**/*",
       "package.json"

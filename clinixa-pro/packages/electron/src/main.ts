@@ -8,7 +8,7 @@ let mainWindow: BrowserWindow | null = null;
 let serverProcess: ReturnType<typeof startEmbeddedServer> | null = null;
 let clientProcess: ReturnType<typeof startEmbeddedClient> | null = null;
 
-const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
+const isDev = process.env.NODE_ENV === 'development';
 
 // معالج فتح نافذة اختيار المجلد لنظام التشغيل
 ipcMain.handle('dialog:select-folder', async (_event, defaultPath?: string) => {

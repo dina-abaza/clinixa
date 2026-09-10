@@ -1,9 +1,6 @@
 import type { Knex } from 'knex';
 import * as path from 'path';
 import * as fs from 'fs';
-import * as dotenv from 'dotenv';
-
-dotenv.config();
 
 /**
  * @description التحقق من وجود مسار قاعدة البيانات في بيئة الإنتاج (Fail-Fast)
@@ -89,9 +86,13 @@ const config: Record<string, Knex.Config> = {
     },
     migrations: {
       directory: path.join(__dirname, 'src/db/sqlite/migrations'),
+      extension: 'js',
+      loadExtensions: ['.js'],
     },
     seeds: {
       directory: path.join(__dirname, 'src/db/sqlite/seeds'),
+      extension: 'js',
+      loadExtensions: ['.js'],
     },
   },
 };
