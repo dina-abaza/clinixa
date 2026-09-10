@@ -5,11 +5,18 @@ appId: com.clinixa.app
 productName: Clinixa Pro
 files:
   - filter:
-      - dist/**/*
-      - ../client/dist/**/*
-      - ../server/dist/**/*
-      - ../shared/dist/**/*
       - package.json
+      - dist/**/*
+  - from: ../client/dist
+    to: client/dist
+  - from: ../server/dist
+    to: server/dist
+  - from: ../shared/dist
+    to: shared/dist
+  - from: ../../node_modules
+    to: node_modules
+asarUnpack:
+  - '**/node_modules/better-sqlite3/**/*'
 win:
   target:
     - nsis

@@ -6,14 +6,49 @@
   ],
   "version": "1.0.0",
   "description": "Clinixa Clinic Management System",
-  "main": "index.js",
+  "main": "packages/electron/dist/main.js",
   "scripts": {
     "dev": "npm run dev --workspace=electron",
     "dev:server": "npm run dev --workspace=server",
     "dev:client": "npm run dev --workspace=client",
     "build": "npm run build --workspaces",
-    "dist": "npm run dist --workspace=electron",
+    "dist": "electron-builder --win nsis",
     "test": "npm run test --workspace=server"
+  },
+  "build": {
+    "electronVersion": "37.10.3",
+    "appId": "com.clinixa.app",
+    "productName": "Clinixa Pro",
+    "directories": {
+      "output": "dist-installer"
+    },
+    "files": [
+      "packages/electron/dist/**/*",
+      "packages/client/dist/**/*",
+      "packages/server/dist/**/*",
+      "packages/shared/dist/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "asarUnpack": [
+      "**/node_modules/better-sqlite3/**/*"
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Clinixa Pro"
+    }
+  },
+  "devDependencies": {
+    "electron": "^37.3.0",
+    "electron-builder": "^25.1.8"
   },
   "keywords": [],
   "author": "",

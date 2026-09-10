@@ -74,13 +74,23 @@ function createWindow(): void {
     },
   });
 
-  const clientDist = path.resolve(__dirname, '../../client/dist/index.html');
-
   if (isDev) {
     loadDevURL(mainWindow, 'http://localhost:5173');
   } else {
-    if (fs.existsSync(clientDist)) {
+    const appPath = app.getAppPath();
+    const candidateClientPaths = [
+      path.join(appPath, 'client/dist/index.html'),
+      path.join(appPath, 'packages/client/dist/index.html'),
+      path.join(appPath, '../client/dist/index.html'),
+      path.resolve(__dirname, '../../client/dist/index.html'),
+    ];
+    const clientDist = candidateClientPaths.find((p) => fs.existsSync(p));
+
+    if (clientDist) {
+      console.log('🚀 Loading production client index.html from:', clientDist);
       mainWindow.loadFile(clientDist);
+    } else {
+      console.error('❌ Could not find client index.html in production candidate paths:', candidateClientPaths);
     }
   }
 
