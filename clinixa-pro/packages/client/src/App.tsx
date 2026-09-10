@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { HashRouter, Route, Routes } from 'react-router-dom';
 import { IconSprite } from './components/icons/IconSprite';
 import { FirstRunSetupPage } from './features/setup/FirstRunSetupPage';
 import { LoginPage } from './features/auth/LoginPage';
@@ -19,7 +19,7 @@ import { AdminPage } from './features/admin/AdminPage';
 
 function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <IconSprite />
       <SessionBoundary>
         <Routes>
@@ -47,7 +47,7 @@ function App() {
           </Route>
         </Routes>
       </SessionBoundary>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
 

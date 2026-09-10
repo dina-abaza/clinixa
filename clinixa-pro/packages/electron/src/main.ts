@@ -79,9 +79,8 @@ function createWindow(): void {
   } else {
     const appPath = app.getAppPath();
     const candidateClientPaths = [
-      path.join(appPath, 'client/dist/index.html'),
       path.join(appPath, 'packages/client/dist/index.html'),
-      path.join(appPath, '../client/dist/index.html'),
+      path.join(appPath, 'client/dist/index.html'),
       path.resolve(__dirname, '../../client/dist/index.html'),
     ];
     const clientDist = candidateClientPaths.find((p) => fs.existsSync(p));
