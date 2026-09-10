@@ -202,6 +202,20 @@ describe('Phase 8 — Google Drive Integration & Encryption Tests', () => {
   // 3. اختبارات النسخ السحابي والحالات الموثقة
   // ─────────────────────────────────────────────────────────────
   describe('3. Cloud Backup Execution & Failure Handling', () => {
+    it('يقبل وضع استعادة Google Drive في السكيمة ويُعيد خطأ واضح إن لم توجد نسخة Drive مسجلة', async () => {
+      const res = await request(app)
+        .post('/api/backup/restore')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          confirmation_text: 'RESTORE',
+          source_mode: 'google_drive',
+        });
+
+      expect(res.status).toBe(404);
+      expect(res.body.ok).toBe(false);
+      expect(res.body.error.code).toBe('NOT_FOUND');
+    });
+
     it('يسجل فشل النسخ السحابي عندما تكون الإعدادات غير مهيأة مع تنبيه نظام', async () => {
       const res = await request(app)
         .post('/api/backup/run')

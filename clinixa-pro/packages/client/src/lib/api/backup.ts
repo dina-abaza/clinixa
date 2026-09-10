@@ -61,7 +61,7 @@ export async function setBackupDestination(
 
 export interface RestoreBackupRequest {
   confirmation_text: string;
-  source_mode?: 'history' | 'custom_path';
+  source_mode?: 'history' | 'custom_path' | 'google_drive';
   backup_id?: string;
   custom_path?: string;
   backup_password?: string;

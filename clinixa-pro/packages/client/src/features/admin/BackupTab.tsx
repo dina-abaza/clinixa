@@ -23,7 +23,7 @@ export function BackupTab() {
   const [customPath, setCustomPath] = useState('');
   const [runBackupPassword, setRunBackupPassword] = useState('');
   const [showRunBackupPassword, setShowRunBackupPassword] = useState(false);
-  const [restoreSourceMode, setRestoreSourceMode] = useState<'history' | 'custom_path'>('history');
+  const [restoreSourceMode, setRestoreSourceMode] = useState<'history' | 'custom_path' | 'google_drive'>('history');
   const [restoreBackupId, setRestoreBackupId] = useState('');
   const [restoreCustomPath, setRestoreCustomPath] = useState('');
   const [restorePassword, setRestorePassword] = useState('');
@@ -637,11 +637,37 @@ export function BackupTab() {
                   <svg width={16} height={16} aria-hidden="true"><use href="#i-folder" /></svg>
                   <span>{t('admin.backup.restoreSourceCustom')}</span>
                 </button>
+                <button
+                  type="button"
+                  className={`btn ${restoreSourceMode === 'google_drive' ? 'btn-primary' : 'btn-secondary'} btn-sm`}
+                  onClick={() => setRestoreSourceMode('google_drive')}
+                  style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}
+                >
+                  <svg width={16} height={16} aria-hidden="true"><use href="#i-cloud" /></svg>
+                  <span>{t('admin.backup.restoreSourceGoogleDrive')}</span>
+                </button>
               </div>
             </div>
 
             {/* الحقول بحسب المصدر المختار */}
-            {restoreSourceMode === 'history' ? (
+            {restoreSourceMode === 'google_drive' ? (
+              <div className="form-grid">
+                <div className="form-field">
+                  <label htmlFor="bk-restore-drive-select">{t('admin.backup.restoreSelectLabel')}</label>
+                  <div className="input-wrap no-icon">
+                    <select id="bk-restore-drive-select" value={restoreBackupId} onChange={(e) => setRestoreBackupId(e.target.value)}>
+                      <option value="">{t('admin.backup.restoreLatestOk')}</option>
+                      {items.filter((b) => b.destination === 'google_drive' && b.status === 'ok').map((b) => (
+                        <option key={b.id} value={b.id}>
+                          {b.date} {b.time} — {t(`admin.backup.destinations.${b.destination}`)}
+                        </option>
+                      ))}
+                    </select>
+                    <span className="chev"><svg width={16} height={16} aria-hidden="true"><use href="#i-chevron-down" /></svg></span>
+                  </div>
+                </div>
+              </div>
+            ) : restoreSourceMode === 'history' ? (
               <div className="form-grid">
                 <div className="form-field">
                   <label htmlFor="bk-restore-select">{t('admin.backup.restoreSelectLabel')}</label>

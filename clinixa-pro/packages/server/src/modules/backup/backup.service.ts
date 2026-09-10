@@ -445,6 +445,49 @@ export async function restoreBackup(
         attachmentsDirPath = possibleAttachments;
       }
     }
+  } else if (input.source_mode === 'google_drive') {
+    let record: any = null;
+    if (input.backup_id) {
+      record = await query('backup_history')
+        .where({ id: input.backup_id, destination: 'google_drive', status: 'ok' })
+        .first();
+      if (!record) {
+        throw new AppError('NOT_FOUND', 'النسخة الاحتياطية المحددة من Google Drive غير موجودة في سجل النظام', 404);
+      }
+    } else {
+      record = await query('backup_history')
+        .where({ status: 'ok', destination: 'google_drive' })
+        .orderBy('date', 'desc')
+        .orderBy('time', 'desc')
+        .first();
+
+      if (!record) {
+        throw new AppError('NOT_FOUND', 'لا توجد أي نسخة احتياطية ناجحة مسجلة من Google Drive', 404);
+      }
+    }
+
+    const defaultBackupsRoot = path.resolve(__dirname, '../../..', 'data', 'backups');
+    const folderName = `${record.date}_${String(record.time).replace(/:/g, '-')}`;
+    const backupFolder = path.join(defaultBackupsRoot, folderName);
+
+    if (!fs.existsSync(backupFolder)) {
+      throw new AppError('NOT_FOUND', `لم يتم العثور على ملف نسخ Google Drive المحلي في مجلد (${folderName})`, 404);
+    }
+
+    const encDb = path.join(backupFolder, 'clinixa.db.encrypted');
+    const rawDb = path.join(backupFolder, 'clinixa.db');
+    if (fs.existsSync(encDb)) {
+      dbFilePath = encDb;
+    } else if (fs.existsSync(rawDb)) {
+      dbFilePath = rawDb;
+    } else {
+      throw new AppError('NOT_FOUND', 'ملف قاعدة البيانات غير موجود داخل مجلد النسخة الاحتياطية من Google Drive', 404);
+    }
+
+    const attachPath = path.join(backupFolder, 'attachments');
+    if (fs.existsSync(attachPath) && fs.statSync(attachPath).isDirectory()) {
+      attachmentsDirPath = attachPath;
+    }
   } else {
     // 2. الاستعادة من السجل الداخلي (History)
     let record: any = null;
