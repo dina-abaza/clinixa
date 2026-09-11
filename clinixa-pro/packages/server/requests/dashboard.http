@@ -1,0 +1,22 @@
+@baseUrl = http://localhost:4321
+
+# =====================================================
+# PHASE 11 — DASHBOARD (لوحة التحكم)
+# =====================================================
+
+### 1. تسجيل الدخول كطبيب / مالك
+# @name login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "mohamed",
+  "password": "123456789"
+}
+
+###
+
+### 2. جلب ملخص لوحة التحكم (الإحصائيات ومرضى اليوم)
+GET {{baseUrl}}/api/dashboard/summary
+Authorization: Bearer {{login.response.body.data.token}}
+Content-Type: application/json

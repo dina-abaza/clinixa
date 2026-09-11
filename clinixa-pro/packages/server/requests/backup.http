@@ -1,0 +1,216 @@
+### Backup Module Testing
+
+# متغيرات مشتركة
+@baseUrl = http://localhost:4321
+---
+### 2. تسجيل الدخول كمالك النظام
+# @name login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "dr.phase6",
+  "password": "password123"
+}
+
+###
+
+@authToken = {{login.response.body.data.token}}
+
+###
+
+### 1️⃣ جلب سجل النسخ الاحتياطي السابقة
+GET {{baseUrl}}/api/backup/history
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+### 2️⃣ تشغيل نسخة احتياطية على جهاز محلي (مسار افتراضي)
+POST {{baseUrl}}/api/backup/run
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "destination": "local_device",
+  "kind": "manual"
+}
+
+
+### 2️⃣.1 تشغيل نسخة احتياطية على مجلد مخصص محلي أو فلاشة
+POST {{baseUrl}}/api/backup/run
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "destination": "local_device",
+  "kind": "manual",
+  "target_path": "E:/MyCustomClinicBackups"
+}
+
+
+### 3️⃣ تشغيل نسخة احتياطية على USB
+POST {{baseUrl}}/api/backup/run
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "destination": "usb",
+  "kind": "manual",
+  "target_path": "F:/USB_Backup_Folder"
+}
+
+
+### 4️⃣ تشغيل نسخة احتياطية على جوجل درايف
+POST {{baseUrl}}/api/backup/run
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "destination": "google_drive",
+  "kind": "auto"
+}
+
+
+
+### 5️⃣ محاكاة فشل النسخ (بلا إنترنت)
+POST {{baseUrl}}/api/backup/run
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "destination": "google_drive",
+  "kind": "auto",
+  "force_fail": true,
+  "fail_reason": "offline"
+}
+
+
+
+### 6️⃣ محاكاة فشل النسخ (انتهت صلاحية التوكن)
+POST {{baseUrl}}/api/backup/run
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "destination": "google_drive",
+  "kind": "auto",
+  "force_fail": true,
+  "fail_reason": "token"
+}
+
+
+
+### 7️⃣ محاكاة فشل النسخ (جهاز تخزين غير متاح)
+POST {{baseUrl}}/api/backup/run
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "destination": "usb",
+  "kind": "manual",
+  "force_fail": true,
+  "fail_reason": "device_unavailable"
+}
+
+
+
+### 8️⃣ تحديث وجهة النسخ الاحتياطية
+PUT {{baseUrl}}/api/backup/destination
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "destination": "local_device"
+}
+
+
+
+### 9️⃣ استعادة نسخة احتياطية بكلمة تأكيد صحيحة (RESTORE)
+POST {{baseUrl}}/api/backup/restore
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "confirmation_text": "RESTORE"
+}
+
+
+
+### 🔟 استعادة نسخة احتياطية بكلمة تأكيد صحيحة (CONFIRM)
+POST {{baseUrl}}/api/backup/restore
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "confirmation_text": "CONFIRM"
+}
+
+
+
+### 1️⃣1️⃣ استعادة نسخة احتياطية بكلمة تأكيد بالعربية
+POST {{baseUrl}}/api/backup/restore
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "confirmation_text": "استعادة"
+}
+
+
+
+### 1️⃣2️⃣ استعادة نسخة احتياطية برقم معين
+POST {{baseUrl}}/api/backup/restore
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "confirmation_text": "RESTORE",
+  "backup_id": "bkp_00000000-0000-0000-0000-000000000000"
+}
+
+
+### 1️⃣3️⃣ جلب إعدادات Google Drive
+GET {{baseUrl}}/api/backup/google-drive
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+### 1️⃣4️⃣ ضبط وتحديث إعدادات Google Drive
+PUT {{baseUrl}}/api/backup/google-drive
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "script_url": "https://script.google.com/macros/s/AKfycbwoi8x1AcBgYcgPuAWhMrfVYrqBEh7Ml2rDz-TTrg6HWC8kx8iGnulQiWPoSwMmsjyDNg/exec",
+  "secret_key": "Clinic_App_BkUp_98f7a2d4c8e1a3f6b5297130e4",
+  "backup_password": "MySuperSecretBackupPassword2026!",
+  "is_enabled": true
+}
+
+### 1️⃣5️⃣ حذف إعدادات Google Drive
+DELETE {{baseUrl}}/api/backup/google-drive
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+### ❌ اختبار الفشل: بدون تحديد الوجهة
+POST {{baseUrl}}/api/backup/run
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "kind": "manual"
+}
+
+
+### ❌ اختبار الفشل: كلمة تأكيد خاطئة
+POST {{baseUrl}}/api/backup/restore
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "confirmation_text": "INVALID"
+}
+
+
+### ❌ اختبار الفشل: بدون توكن
+GET {{baseUrl}}/api/backup/history
+
+

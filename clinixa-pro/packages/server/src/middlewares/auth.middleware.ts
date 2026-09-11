@@ -41,7 +41,7 @@ export function authMiddleware(req: Request, _res: Response, next: NextFunction)
   const header = req.headers.authorization;
 
   if (!header || !header.startsWith('Bearer ')) {
-    throw new AppError('UNAUTHORIZED', 'يجب تسجيل الدخول أولاً', 401);
+    return next(new AppError('UNAUTHORIZED', 'يجب تسجيل الدخول أولاً', 401));
   }
 
   const token = header.slice('Bearer '.length);
@@ -58,6 +58,6 @@ export function authMiddleware(req: Request, _res: Response, next: NextFunction)
 
     next();
   } catch {
-    throw new AppError('UNAUTHORIZED', 'الجلسة غير صالحة أو منتهية', 401);
+    return next(new AppError('UNAUTHORIZED', 'الجلسة غير صالحة أو منتهية', 401));
   }
 }

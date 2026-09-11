@@ -13,6 +13,7 @@ import {
 } from './schema';
 import { LICENSE_KEY_RE } from '../../lib/validation/licenseKey';
 import { postFirstRunSetup, type FirstRunSetupRequest } from '../../lib/api/setup';
+import { verifySetupKey } from '../../lib/api/license';
 import { setAuthToken } from '../../lib/api/client';
 import { markSetupComplete } from '../../lib/setupState';
 import { ar } from '../../lib/i18n/locales/ar';
@@ -71,7 +72,20 @@ export function FirstRunSetupPage() {
   async function handleNext() {
     const fields = STEP_FIELDS[step];
     const valid = await trigger(fields);
-    if (valid) setStep((s) => Math.min(TOTAL_STEPS, s + 1));
+    if (!valid) return;
+
+    if (step === 1) {
+      const keyCheck = await verifySetupKey(watch('licenseKey'));
+      if (!keyCheck.ok) {
+        setError('licenseKey', {
+          type: 'manual',
+          message: t('setup.license.errorInvalid'),
+        });
+        return;
+      }
+    }
+
+    setStep((s) => Math.min(TOTAL_STEPS, s + 1));
   }
 
   function handleBack() {
@@ -80,62 +94,69 @@ export function FirstRunSetupPage() {
   }
 
   async function onValidSubmit(values: FirstRunSetupFormValues) {
-    setSubmitError(null);
-    setIsSubmitting(true);
+    try {
+      console.log('Form is valid, submitting...', values);
+      setSubmitError(null);
+      setIsSubmitting(true);
 
-    // ⚠ سؤال الأمان بيتبعت كنص عربي (لغة القيد) مش كمفتاح داخلي — نفس شكل
-    // §1 و GET /api/auth/security-question في الـ API reference
-    const questionTextAr = ar.setup.security.questions[values.securityQuestion];
+      // ⚠ سؤال الأمان بيتبعت كنص عربي (لغة القيد) مش كمفتاح داخلي — نفس شكل
+      // §1 و GET /api/auth/security-question في الـ API reference
+      const questionTextAr = ar.setup.security.questions[values.securityQuestion];
 
-    const payload: FirstRunSetupRequest = {
-      license_key: values.licenseKey,
-      clinic: {
-        name_ar: values.clinicNameAr,
-        phone: values.clinicPhone,
-        address: values.clinicAddress.trim() || null,
-        specialty: values.specialty,
-        opens_at: values.opensAt,
-        closes_at: values.closesAt,
-      },
-      doctor_account: {
-        name_ar: values.doctorNameAr,
-        username: values.username,
-        password: values.password,
-      },
-      security: {
-        question: questionTextAr,
-        answer: values.securityAnswer,
-      },
-    };
+      const payload: FirstRunSetupRequest = {
+        license_key: values.licenseKey,
+        clinic: {
+          name_ar: values.clinicNameAr,
+          phone: values.clinicPhone,
+          address: values.clinicAddress.trim() || null,
+          specialty: values.specialty,
+          opens_at: values.opensAt,
+          closes_at: values.closesAt,
+        },
+        doctor_account: {
+          name_ar: values.doctorNameAr,
+          username: values.username,
+          password: values.password,
+        },
+        security: {
+          question: questionTextAr,
+          answer: values.securityAnswer,
+        },
+      };
 
-    const res = await postFirstRunSetup(payload);
-    setIsSubmitting(false);
+      const res = await postFirstRunSetup(payload);
+      setIsSubmitting(false);
 
-    if (res.ok) {
-      setAuthToken(res.data.token);
-      markSetupComplete();
-      setDone({
-        clinicName: values.clinicNameAr,
-        username: values.username,
-        questionLabel: t(`setup.security.questions.${values.securityQuestion}`),
-      });
-      return;
-    }
+      if (res.ok) {
+        setAuthToken(res.data.token);
+        markSetupComplete();
+        setDone({
+          clinicName: values.clinicNameAr,
+          username: values.username,
+          questionLabel: t(`setup.security.questions.${values.securityQuestion}`),
+        });
+        return;
+      } else {
+        // العيادة متظبّطة بالفعل على الجهاز ده (409) — إشارة أكيدة من الباك، أوثق من أي علامة محلية.
+        // نسجّلها فورًا عشان "/" يوصّل لتسجيل الدخول من غير ما يعرض الويزارد تاني.
+        if (res.error.code === 'CONFLICT') {
+          markSetupComplete();
+          setSubmitError(res.error.message);
+          return;
+        }
 
-    // العيادة متظبّطة بالفعل على الجهاز ده (409) — إشارة أكيدة من الباك، أوثق من أي علامة محلية.
-    // نسجّلها فورًا عشان "/" يوصّل لتسجيل الدخول من غير ما يعرض الويزارد تاني.
-    if (res.error.code === 'CONFLICT') {
-      markSetupComplete();
-      setSubmitError(res.error.message);
-      return;
-    }
-
-    const mapped = res.error.field ? BACKEND_FIELD_TO_FORM[res.error.field] : undefined;
-    if (mapped) {
-      setStep(mapped.step);
-      setError(mapped.field, { type: 'server', message: res.error.message });
-    } else {
-      setSubmitError(res.error.message || t('setup.genericError'));
+        const mapped = res.error.field ? BACKEND_FIELD_TO_FORM[res.error.field] : undefined;
+        if (mapped) {
+          setStep(mapped.step);
+          setError(mapped.field, { type: 'server', message: res.error.message });
+        } else {
+          setSubmitError(res.error.message || t('setup.genericError'));
+        }
+      }
+    } catch (err) {
+      console.error('Setup submission failed:', err);
+      setIsSubmitting(false);
+      setSubmitError(t('setup.genericError'));
     }
   }
 
@@ -161,7 +182,18 @@ export function FirstRunSetupPage() {
                 questionLabel={done.questionLabel}
               />
             ) : (
-              <form noValidate onSubmit={handleSubmit(onValidSubmit)}>
+              <form
+                noValidate
+                onSubmit={handleSubmit(onValidSubmit, (errors) => {
+                  console.error('Form is invalid:', errors);
+                  // الانتقال لأول خطوة فيها خطأ
+                  const firstErrorField = Object.keys(errors)[0] as keyof FirstRunSetupFormValues;
+                  const errorStep = Object.entries(STEP_FIELDS).find(([_, fields]) =>
+                    fields.includes(firstErrorField)
+                  )?.[0];
+                  if (errorStep) setStep(Number(errorStep));
+                })}
+              >
                 <div className="icon-badge" aria-hidden="true">
                   <svg width={24} height={24}>
                     <use href="#i-lock" />

@@ -6,10 +6,31 @@
 
 import * as dotenv from 'dotenv';
 import * as path from 'path';
+import * as fs from 'fs';
 import { z } from 'zod';
 
-// تحميل ملف .env من مجلد السيرفر
-dotenv.config({ path: path.join(__dirname, '../../.env') });
+// لا تُحمّل .env في production؛ لأن Electron يمرّر المتغيرات من process.env
+// وملف .env ممكن أن يُعيد NODE_ENV إلى development ويشوه مسار المهاجرات.
+const isProduction = (process.env.NODE_ENV || '').toLowerCase() === 'production';
+
+if (!isProduction) {
+  // حاول العثور على ملف .env في بيئات التطوير وداخل الحزمة المعبأة.
+  const appPath = process.env.CLINIXA_APP_PATH || process.cwd();
+  const envCandidates = [
+    path.resolve(appPath, 'packages/server/.env'),
+    path.resolve(appPath, 'server/.env'),
+    path.resolve(process.cwd(), 'packages/server/.env'),
+    path.resolve(process.cwd(), '.env'),
+    path.resolve(__dirname, '../../.env'),
+    path.resolve(__dirname, '../../../../.env'),
+    path.resolve(__dirname, '../../../../../.env'),
+  ];
+
+  const envPath = envCandidates.find((candidate) => fs.existsSync(candidate));
+  if (envPath) {
+    dotenv.config({ path: envPath });
+  }
+}
 
 /**
  * @description سكيمة التحقق لمتغيرات البيئة باستخدام Zod
@@ -23,7 +44,7 @@ const envSchema = z.object({
   SQLITE_DB_PATH: z.string().min(1, 'مسار قاعدة البيانات مطلوبة').default('./data/clinixa.db'),
 
   // ── المصادقة ──────────────────────────────────
-  JWT_SECRET: z.string().min(1, 'JWT_SECRET مطلوب لأمان التطبيق'),
+  JWT_SECRET: z.string().min(1, 'JWT_SECRET مطلوب لأمان التطبيق').default('clinixa_secret_key_for_testing_and_development_123456789'),
   JWT_EXPIRES_IN: z.string().default('12h'),
   BCRYPT_SALT_ROUNDS: z.coerce.number().default(10),
 

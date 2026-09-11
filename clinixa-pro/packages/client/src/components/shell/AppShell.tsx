@@ -2,6 +2,7 @@ import { Outlet } from 'react-router-dom';
 import { useDocumentDirection } from '../../lib/i18n/useDocumentDirection';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
+import { LicenseBanner } from '../../features/license/LicenseBanner';
 
 /**
  * حاوية التطبيق الرئيسية بعد تسجيل الدخول — Screen 0 (Global Navigation
@@ -23,6 +24,7 @@ export function AppShell() {
         <Sidebar />
         <div className="main">
           <Topbar />
+          <LicenseBanner />
           <main className="content">
             <Outlet />
           </main>

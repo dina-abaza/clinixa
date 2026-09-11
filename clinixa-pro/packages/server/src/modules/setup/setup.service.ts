@@ -5,21 +5,33 @@ import query from '../../db/sqlite/query';
 import { env } from '../../config/env';
 import { AppError } from '../../middlewares/error-handler.middleware';
 import { PERMISSIONS } from '@clinixa/shared';
+import { verifySetupLicenseKey, describeDurationCode, signLicenseState } from '../license/license.crypto';
+import { getMachineFingerprint } from '../license/license.fingerprint';
 import type { FirstRunInput } from './setup.validation';
 
 /**
  * @description ينفّذ إعداد أول مرة (first-run) — clinic_settings + الفرع الرئيسي + حساب الطبيب المالك
  *              كل الإدراجات في transaction واحدة — لو أي جزء فشل، كله بيترجع (rollback)
- * ⚠️ ملحوظة: التحقق من إن license_key "مستخدم من قبل على جهاز تاني" (409) بيتطلب تحقق أونلاين
- *    ده قرار مفتوح لسه (روضماب - يوم ٢٤) — دلوقتي بنكتفي بفحص محلي: هل الجهاز ده اتعمله setup قبل كده
  */
 export async function firstRunSetup(input: FirstRunInput) {
+  const keyCheck = verifySetupLicenseKey(input.license_key);
+  if (!keyCheck.valid) {
+    throw new AppError(
+      'INVALID_LICENSE',
+      'مفتاح ترخيص التثبيت غير صحيح أو غير معتمد من النظام',
+      400
+    );
+  }
+
+  // المدة مستخرجة من المفتاح نفسه — لا توجد قيمة ثابتة
+  const setupDurationMs = keyCheck.durationMs;
+
   const existingSettings = await query('clinic_settings').where({ id: 'singleton' }).first();
 
   if (existingSettings) {
     throw new AppError(
       'CONFLICT',
-      'التطبيق ده متظبّط بالفعل على جهاز تاني بنفس المفتاح ده',
+      'تم إعداد النظام مسبقاً على هذا الجهاز. لتجديد الاشتراك يرجى استخدام كود التفعيل (ACT) من نافذة التجديد، أو إعادة تهيئة قاعدة البيانات لبدء تثبيت جديد.',
       409
     );
   }
@@ -74,6 +86,27 @@ export async function firstRunSetup(input: FirstRunInput) {
     }));
 
     await trx('employee_permissions').insert(permissionRows);
+
+    // تهيئة سجل الترخيص — المدة من مفتاح التثبيت نفسه
+    const now = new Date();
+    const expiry = new Date(now.getTime() + setupDurationMs).toISOString();
+    const lastActive = now.toISOString();
+    const machineId = getMachineFingerprint();
+    const sig = signLicenseState(expiry, lastActive, machineId);
+
+    // إنشاء جدول license_activations لو مش موجود أو إدراج الصف
+    const hasTable = await trx.schema.hasTable('license_activations');
+    if (hasTable) {
+      await trx('license_activations').insert({
+        id: 'singleton',
+        current_challenge: null,
+        expires_at: expiry,
+        last_active_at: lastActive,
+        is_tampered: 0,
+        signature: sig,
+        last_activated_at: lastActive,
+      }).onConflict('id').merge();
+    }
   });
 
   const token = jwt.sign(

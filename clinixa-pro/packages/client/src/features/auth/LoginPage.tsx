@@ -51,19 +51,19 @@ export function LoginPage() {
     setIsSubmitting(false);
 
     if (res.ok) {
-      setSession({ token: res.data.token, employee: res.data.employee, activeBranch: res.data.active_branch });
-      // تسجيل دخول ناجح = دليل قاطع إن العيادة متظبّطة أصلًا — بيغطّي حالة
-      // إن العلامة المحلية اتمسحت أو إن المستخدم عدّى الإعداد قبل ما الفحص
-      // ده يتضاف (راجع lib/setupState.ts).
+      setSession({
+        token: res.data.token,
+        employee: res.data.employee,
+        activeBranch: res.data.active_branch,
+      });
       markSetupComplete();
       setSignedIn(true);
-      // بانر النجاح بيبان لحظة قبل التنقّل — نفس نية شاشة الدخول الأصلية
       setTimeout(() => navigate(redirectTo, { replace: true }), 700);
-      return;
+    } else {
+      setSubmitError(res.error.message);
     }
-
-    setSubmitError(res.error.message);
   }
+
 
   return (
     <div className="screen login-screen">
@@ -186,6 +186,21 @@ export function LoginPage() {
                 <use href="#i-check" />
               </svg>
               <span>{t('login.success')}</span>
+            </div>
+
+            <div style={{ margin: 'var(--space-5) 0 var(--space-4)', borderTop: '1px solid var(--color-border)' }} />
+
+            <div style={{ textAlign: 'center' }}>
+              <Link
+                to="/setup"
+                className="btn btn-secondary"
+                style={{ width: '100%', display: 'inline-flex', justifyContent: 'center', alignItems: 'center', gap: 'var(--space-2)' }}
+              >
+                <svg width={18} height={18} aria-hidden="true">
+                  <use href="#i-building" />
+                </svg>
+                <span>{t('login.createClinic')}</span>
+              </Link>
             </div>
           </form>
         </div>

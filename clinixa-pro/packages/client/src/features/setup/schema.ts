@@ -23,7 +23,10 @@ export const firstRunSetupFormSchema = z
 
     clinicNameAr: z.string().trim().min(3),
     specialty: specialtyEnum,
-    clinicPhone: z.string().regex(CLINIC_PHONE_RE),
+    clinicPhone: z
+      .string()
+      .transform((val) => val.replace(/\s+/g, '')) // حذف المسافات تلقائيًا
+      .pipe(z.string().regex(CLINIC_PHONE_RE)),
     clinicAddress: z.string().trim(),
     opensAt: z.string().min(1),
     closesAt: z.string().min(1),

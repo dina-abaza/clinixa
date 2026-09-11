@@ -4,7 +4,12 @@ import { SPECIALTIES } from '@clinixa/shared';
 const specialtyKeys = SPECIALTIES.map((s) => s.key) as [string, ...string[]];
 
 export const firstRunSchema = z.object({
-  license_key: z.string().min(1, 'مفتاح الترخيص مطلوب'),
+  license_key: z
+    .string()
+    .regex(
+      /^CLX-\d{3}[IHDWMY]-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/i,
+      'صيغة مفتاح الترخيص غير صحيحة (مثال: CLX-001M-XXXX-XXXX-XXXX)'
+    ),
 
   clinic: z.object({
     name_ar: z.string().min(3, 'اسم العيادة لازم يكون أكتر من حرفين'),

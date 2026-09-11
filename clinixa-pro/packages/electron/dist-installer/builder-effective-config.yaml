@@ -1,0 +1,29 @@
+directories:
+  output: dist-installer
+  buildResources: build
+appId: com.clinixa.app
+productName: Clinixa Pro
+files:
+  - filter:
+      - package.json
+      - dist/**/*
+  - from: ../client/dist
+    to: client/dist
+  - from: ../server/dist
+    to: server/dist
+  - from: ../shared/dist
+    to: shared/dist
+  - from: ../../node_modules
+    to: node_modules
+asarUnpack:
+  - '**/node_modules/better-sqlite3/**/*'
+win:
+  target:
+    - nsis
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Clinixa Pro
+electronVersion: 37.10.3

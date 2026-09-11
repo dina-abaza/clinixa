@@ -1,0 +1,267 @@
+@baseUrl = http://localhost:4321
+
+# =====================================================
+# PHASE 4 — REST CLIENT TEST SUITE (الموديولات الداعمة)
+# تغطية شاملة لجميع endpoints المرحلة الرابعة
+# =====================================================
+# ⚠️ شغّل الـ requests بالترتيب (1 → 25) عشان الـ inline references تشتغل صح
+# =====================================================
+
+### 1. تسجيل الدخول كطبيب / مالك
+# @name login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "dr.ahmed",
+  "password": "newpassword123"
+}
+
+# =====================================================
+# 📦 1. INVENTORY MODULE (المخزون)
+# =====================================================
+
+### 2. إضافة صنف جديد في المخزون
+# @name createInventoryItem
+POST {{baseUrl}}/api/inventory
+Authorization: Bearer {{login.response.body.data.token}}
+Content-Type: application/json
+
+{
+  "name_ar": "قفازات طبية لاتكس",
+  "name_en": "Medical Latex Gloves",
+  "type": "supplies",
+  "qty": 30,
+  "min_qty": 10,
+  "unit": "box"
+}
+
+### 3. إضافة صنف أجهزة طبية
+# @name createEquipmentItem
+POST {{baseUrl}}/api/inventory
+Authorization: Bearer {{login.response.body.data.token}}
+Content-Type: application/json
+
+{
+  "name_ar": "جهاز ضغط رقمي",
+  "name_en": "Digital BP Monitor",
+  "type": "equipment",
+  "qty": 2,
+  "min_qty": null,
+  "unit": "piece"
+}
+
+### 4. جلب قائمة المخزون (مع حساب low_stock لحظياً)
+GET {{baseUrl}}/api/inventory
+Authorization: Bearer {{login.response.body.data.token}}
+
+### 5. تعديل كمية الصنف وتوليد تنبيه نقص مخزون تلقائياً (qty <= min_qty)
+PATCH {{baseUrl}}/api/inventory/{{createInventoryItem.response.body.data.id}}/adjust-qty
+Authorization: Bearer {{login.response.body.data.token}}
+Content-Type: application/json
+
+{
+  "qty": 3
+}
+
+### 6. تعديل بيانات صنف في المخزون
+PUT {{baseUrl}}/api/inventory/{{createInventoryItem.response.body.data.id}}
+Authorization: Bearer {{login.response.body.data.token}}
+Content-Type: application/json
+
+{
+  "name_ar": "قفازات طبية معقمة فاخرة",
+  "min_qty": 15
+}
+
+# =====================================================
+# 👥 2. EMPLOYEES MODULE (الموظفون والصلاحيات)
+# =====================================================
+
+### 7. إنشاء حساب موظف جديد (سكرتيرة) — يرجع temporary_password مرة واحدة
+# @name createEmployee
+POST {{baseUrl}}/api/employees
+Authorization: Bearer {{login.response.body.data.token}}
+Content-Type: application/json
+
+{
+  "name_ar": "منى السكرتيرة",
+  "username": "mona.sec",
+  "role": "secretary",
+  "permissions": [
+    "pat.view",
+    "pat.add",
+    "pat.edit",
+    "att.view",
+    "att.add",
+    "att.edit",
+    "att.done",
+    "pay.view",
+    "pay.add"
+  ]
+}
+
+### 8. استعراض قائمة الموظفين وصلاحياتهم
+GET {{baseUrl}}/api/employees
+Authorization: Bearer {{login.response.body.data.token}}
+
+### 9. تعديل صلاحيات الموظف
+PUT {{baseUrl}}/api/employees/{{createEmployee.response.body.data.id}}/permissions
+Authorization: Bearer {{login.response.body.data.token}}
+Content-Type: application/json
+
+{
+  "permissions": [
+    "pat.view",
+    "pat.add",
+    "att.view",
+    "att.add"
+  ]
+}
+
+### 10. محاولة تعديل صلاحيات المالك → يجب أن يرفض بـ 403 FORBIDDEN
+PUT {{baseUrl}}/api/employees/{{login.response.body.data.employee.id}}/permissions
+Authorization: Bearer {{login.response.body.data.token}}
+Content-Type: application/json
+
+{
+  "permissions": [
+    "pat.view"
+  ]
+}
+
+### 11. إعادة تعيين كلمة سر الموظف بكلمة مؤقتة جديدة
+PATCH {{baseUrl}}/api/employees/{{createEmployee.response.body.data.id}}/reset-password
+Authorization: Bearer {{login.response.body.data.token}}
+
+### 12. تبديل حالة تفعيل الموظف (تعطيل الحساب)
+PATCH {{baseUrl}}/api/employees/{{createEmployee.response.body.data.id}}/toggle-active
+Authorization: Bearer {{login.response.body.data.token}}
+Content-Type: application/json
+
+{
+  "is_active": false
+}
+
+### 13. محاولة تعطيل حساب المالك → يجب أن يرفض بـ 403 FORBIDDEN
+PATCH {{baseUrl}}/api/employees/{{login.response.body.data.employee.id}}/toggle-active
+Authorization: Bearer {{login.response.body.data.token}}
+Content-Type: application/json
+
+{
+  "is_active": false
+}
+
+# =====================================================
+# 🏢 3. BRANCHES MODULE (الفروع)
+# =====================================================
+
+### 14. جلب قائمة الفروع
+GET {{baseUrl}}/api/branches
+Authorization: Bearer {{login.response.body.data.token}}
+
+### 15. إنشاء فرع جديد
+# @name createBranch
+POST {{baseUrl}}/api/branches
+Authorization: Bearer {{login.response.body.data.token}}
+Content-Type: application/json
+
+{
+  "name_ar": "فرع المهندسين",
+  "address_ar": "شارع جامعة الدول، الجيزة",
+  "phone": "0233445566",
+  "opens_at": "10:00",
+  "closes_at": "20:00"
+}
+
+### 16. تعديل بيانات الفرع
+PUT {{baseUrl}}/api/branches/{{createBranch.response.body.data.id}}
+Authorization: Bearer {{login.response.body.data.token}}
+Content-Type: application/json
+
+{
+  "name_ar": "فرع المهندسين التخصصي",
+  "opens_at": "09:00",
+  "closes_at": "21:00"
+}
+
+# =====================================================
+# ⚙️ 4. SETTINGS MODULE (الإعدادات والأسعار)
+# =====================================================
+
+### 17. جلب إعدادات العيادة وقائمة الأسعار الافتراضية
+GET {{baseUrl}}/api/settings
+Authorization: Bearer {{login.response.body.data.token}}
+
+### 18. تحديث إعدادات العيادة وقائمة الأسعار
+PUT {{baseUrl}}/api/settings
+Authorization: Bearer {{login.response.body.data.token}}
+Content-Type: application/json
+
+{
+  "clinic": {
+    "name_ar": "عيادة دكتور أحمد التخصصية للقلب",
+    "phone": "0223456789",
+    "address": "المعادي الجديدة، القاهرة"
+  },
+  "prices": [
+    { "charge_type": "consultation", "default_amount": 350 },
+    { "charge_type": "follow_up_visit", "default_amount": 150 },
+    { "charge_type": "procedure", "default_amount": 200 }
+  ]
+}
+
+# =====================================================
+# 💾 5. BACKUP MODULE (النسخ الاحتياطي)
+# =====================================================
+
+### 19. تشغيل النسخ الاحتياطي (ناجح)
+POST {{baseUrl}}/api/backup/run
+Authorization: Bearer {{login.response.body.data.token}}
+Content-Type: application/json
+
+{
+  "destination": "google_drive",
+  "kind": "manual"
+}
+
+### 20. تشغيل نسخ احتياطي فاشل لمحاكاة وتوليد تنبيه نظام
+POST {{baseUrl}}/api/backup/run
+Authorization: Bearer {{login.response.body.data.token}}
+Content-Type: application/json
+
+{
+  "destination": "google_drive",
+  "kind": "auto",
+  "force_fail": true,
+  "fail_reason": "offline"
+}
+
+### 21. جلب سجل عمليات النسخ الاحتياطي
+GET {{baseUrl}}/api/backup/history
+Authorization: Bearer {{login.response.body.data.token}}
+
+### 22. استعادة النسخة الاحتياطية بكلمة تأكيد
+POST {{baseUrl}}/api/backup/restore
+Authorization: Bearer {{login.response.body.data.token}}
+Content-Type: application/json
+
+{
+  "confirmation_text": "RESTORE"
+}
+
+# =====================================================
+# 🔔 6. SYSTEM ALERTS & CONSTANTS (تنبيهات النظام والثوابت)
+# =====================================================
+
+### 23. جلب تنبيهات النظام مع unread_count
+# @name getAlerts
+GET {{baseUrl}}/api/system-alerts
+Authorization: Bearer {{login.response.body.data.token}}
+
+### 24. تعليم أول تنبيه كمقروء
+PATCH {{baseUrl}}/api/system-alerts/{{getAlerts.response.body.data.items[0].id}}/read
+Authorization: Bearer {{login.response.body.data.token}}
+
+### 25. جلب القوائم المرجعية الثابتة للنظام
+GET {{baseUrl}}/api/config/constants
