@@ -15,4 +15,11 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
   },
+  // ⚠ @clinixa/shared هو حزمة CJS متصلة بـ npm workspaces (symlink) — من
+  // غير الإدراج الصريح ده، Vite بيخدمها مباشرة عن طريق /@fs/ بدل ما يعمل
+  // Pre-bundle ليها، والتحليل التلقائي لصادراتها الاسمية (زي LAB_STATUSES)
+  // بيفشل جزئيًا فبيرمي "does not provide an export named ..." وقت التشغيل.
+  optimizeDeps: {
+    include: ['@clinixa/shared'],
+  },
 })
