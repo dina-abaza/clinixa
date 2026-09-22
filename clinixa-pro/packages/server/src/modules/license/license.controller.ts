@@ -52,11 +52,11 @@ export async function verifySetupKeyController(
   res: Response
 ): Promise<void> {
   const { key } = req.body;
-  const keyCheck = licenseService.verifySetupKey(key);
+  const keyCheck = await licenseService.verifySetupOrActivationKey(key);
   if (!keyCheck.valid) {
     res.status(400).json({
       ok: false,
-      error: { code: 'INVALID_LICENSE', message: 'مفتاح الترخيص غير صحيح أو غير معتمد من النظام' },
+      error: { code: 'INVALID_LICENSE', message: 'كود التفعيل غير صحيح أو غير متطابق مع هذا الجهاز' },
     });
     return;
   }

@@ -50,7 +50,22 @@ export function formatRemainingTimeAr(ms: number): string {
 
 export class LicenseService {
   /**
-   * @description فحص صحة مفتاح ترخيص التثبيت
+   * @description فحص صحة مفتاح ترخيص التثبيت أو كود التفعيل المربوط ببصمة الجهاز
+   */
+  async verifySetupOrActivationKey(key: string): Promise<{ valid: boolean; durationMs: number; durationCode: string }> {
+    const cleanKey = String(key || '').trim().toUpperCase();
+    if (cleanKey.startsWith('ACT-')) {
+      const machineId = getMachineFingerprint();
+      const now = new Date();
+      const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      const currentChallenge = generateChallenge(machineId, currentMonthStr);
+      return verifyActivationCode(currentChallenge, cleanKey);
+    }
+    return verifySetupLicenseKey(cleanKey);
+  }
+
+  /**
+   * @description فحص صحة مفتاح ترخيص التثبيت (للتوافق الخلفي)
    */
   verifySetupKey(key: string): { valid: boolean; durationMs: number; durationCode: string } {
     return verifySetupLicenseKey(key);

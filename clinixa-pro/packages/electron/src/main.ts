@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain,Menu } from 'electron';
 import path from 'path';
 import fs from 'fs';
 import { startEmbeddedServer } from './server-bootstrap';
@@ -107,6 +107,7 @@ app.whenReady().then(() => {
     clientProcess = startEmbeddedClient();
   }
 
+  Menu.setApplicationMenu(null);
   createWindow();
 
   app.on('activate', () => {

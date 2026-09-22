@@ -52,3 +52,50 @@ html[dir="ltr"] .setup-screen #clinicPh,
 html[dir="ltr"] .setup-screen #clinicFrom, html[dir="ltr"] .setup-screen #clinicTo { text-align: left; }
 .setup-screen #clinicFrom::-webkit-calendar-picker-indicator,
 .setup-screen #clinicTo::-webkit-calendar-picker-indicator { margin-inline-start: var(--space-2); }
+
+/* صندوق كود التحدي في خطوة الترخيص الأولى */
+.setup-screen .challenge-box {
+  background: var(--color-row-hover, rgba(0, 0, 0, 0.04));
+  border: 1px dashed var(--color-action-primary-default, #3b82f6);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-4);
+}
+.setup-screen .challenge-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-2);
+}
+.setup-screen .challenge-title {
+  font-size: var(--text-caption);
+  font-weight: 700;
+  color: var(--color-text-secondary);
+}
+.setup-screen .challenge-code-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+.setup-screen .challenge-code-val {
+  font-family: var(--font-en, monospace);
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: var(--color-action-primary-default, #3b82f6);
+}
+.setup-screen .btn-copy-code {
+  font-size: var(--text-caption);
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  background: var(--color-action-primary-default, #3b82f6);
+  color: #fff;
+  border: none;
+  font-weight: 600;
+  transition: opacity .15s ease;
+}
+.setup-screen .btn-copy-code:hover {
+  opacity: 0.9;
+}

@@ -49,6 +49,7 @@ export const restoreBackupSchema = z.object({
   backup_id: z.string().optional(),
   custom_path: z.string().trim().optional(),
   backup_password: z.string().optional(),
+  google_drive_file_id: z.string().trim().optional(),
 });
 
 export type RestoreBackupInput = z.infer<typeof restoreBackupSchema>;

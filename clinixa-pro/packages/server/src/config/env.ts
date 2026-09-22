@@ -44,7 +44,7 @@ const envSchema = z.object({
   SQLITE_DB_PATH: z.string().min(1, 'مسار قاعدة البيانات مطلوبة').default('./data/clinixa.db'),
 
   // ── المصادقة ──────────────────────────────────
-  JWT_SECRET: z.string().min(1, 'JWT_SECRET مطلوب لأمان التطبيق').default('clinixa_secret_key_for_testing_and_development_123456789'),
+  JWT_SECRET: z.string().min(32, 'JWT_SECRET مطلوب لأمان التطبيق وتشفير الجلسات (يجب أن يكون 32 حرفاً على الأقل)'),
   JWT_EXPIRES_IN: z.string().default('12h'),
   BCRYPT_SALT_ROUNDS: z.coerce.number().default(10),
 

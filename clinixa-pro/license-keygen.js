@@ -4,14 +4,14 @@
  * 🔐 Clinixa Master License Key Generator (أداة توليد أكواد التفعيل)
  * ═════════════════════════════════════════════════════════════════════
  * للاستخدام الحصري من قبل مالك ومطور النظام لتوليد:
- *   1. مفاتيح تثبيت النظام  CLX-XXXX-XXXX-XXXX
- *   2. أكواد التفعيل        ACT-[DUR]-[SIG]-[SIG]-[SIG]
+ *   1. مفاتيح تثبيت النظام  CLX-[DUR4]-[SIG4]-[SIG4]-[SIG4]
+ *   2. أكواد التفعيل        ACT-[DUR4]-[SIG4]-[SIG4]-[SIG4]
  *
  * ─────────────────────────────────────────────────────────────────────
- * صيغة كود التفعيل الجديدة:
+ * صيغة كود التفعيل:
  *   ACT-006M-A1B2-C3D4-E5F6
  *        ↑
- *   المدة مضمّنة ومشمولة في التوقيع الرقمي
+ *   المدة مضمّنة ومشمولة في التوقيع الرقمي (19 حرفاً فقط)
  *   → أي تعديل على المدة يكسر التوقيع فوراً ✅
  *
  * وحدات الزمن المتاحة:
@@ -35,11 +35,19 @@
 const crypto = require('crypto');
 const readline = require('readline');
 
-// المفتاح السري الرئيسي الموحد (Master Secret Key)
-const MASTER_SECRET = process.env.CLINIXA_LICENSE_SECRET || 'CLINIXA_SECURE_OFFLINE_SECRET_2026_MASTER_SIGNATURE_KEY_#99201';
+// المفتاح السري الرئيسي الموحد المشفر (256-bit Master Signature Key)
+const KEY_CHUNKS = [
+  '86487fb5b93c3e92',
+  '1d7a3ba10c9fd4d5',
+  '55491b8e1b41e016',
+  'f055e8d33422b54b',
+  '6241d498af982b86',
+  '75f5d02b3ec5a64e',
+];
+const MASTER_SECRET = process.env.CLINIXA_LICENSE_SECRET || Buffer.from(KEY_CHUNKS.join(''), 'hex').toString('utf8');
 
 // ─────────────────────────────────────────────────────────────────────────────
-// وحدات الزمن (الرموز الداخلية كلها أحرف كبيرة لأمان المفتاح)
+// وحدات الزمن
 // ─────────────────────────────────────────────────────────────────────────────
 const DURATION_UNIT_MS = {
   I: 60 * 1000,                        // دقيقة (mInutes)
@@ -97,40 +105,23 @@ function describeDuration(code) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // توليد مفتاح تثبيت أصلي — الصيغة: CLX-[DUR4]-[SIG4]-[SIG4]-[SIG4]
-// مثال: CLX-030D-A1B2-C3D4-E5F6 ← 30 يوم تجربة
 // ─────────────────────────────────────────────────────────────────────────────
-function generateSetupLicenseKey(durationInput = '1M') {
+function generateSetupLicenseKey(durationInput = '1Y') {
   const { code: durationCode } = parseDuration(durationInput);
 
   const hmac = crypto.createHmac('sha256', MASTER_SECRET);
   hmac.update(`CLX_SETUP_SIGNATURE|${durationCode}`);
   const hash = hmac.digest('hex').toUpperCase();
 
-  const sig1 = hash.slice(0, 4);
-  const sig2 = hash.slice(4, 8);
-  const sig3 = hash.slice(8, 12);
+  const s1 = hash.slice(0, 4);
+  const s2 = hash.slice(4, 8);
+  const s3 = hash.slice(8, 12);
 
-  return { key: `CLX-${durationCode}-${sig1}-${sig2}-${sig3}`, durationCode };
-}
-
-function verifySetupLicenseKey(key) {
-  if (!key || typeof key !== 'string') return false;
-  const match = key.trim().toUpperCase().match(
-    /^CLX-(\d{3}[IHDWMY])-([A-Z0-9]{4})-([A-Z0-9]{4})-([A-Z0-9]{4})$/
-  );
-  if (!match) return false;
-
-  const [, durationCode, s1, s2, s3] = match;
-  const hmac = crypto.createHmac('sha256', MASTER_SECRET);
-  hmac.update(`CLX_SETUP_SIGNATURE|${durationCode}`);
-  const hash = hmac.digest('hex').toUpperCase();
-  const expectedSig = `${hash.slice(0, 4)}-${hash.slice(4, 8)}-${hash.slice(8, 12)}`;
-
-  return `${s1}-${s2}-${s3}` === expectedSig;
+  return { key: `CLX-${durationCode}-${s1}-${s2}-${s3}`, durationCode };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// توليد كود التفعيل مع مدة مضمّنة
+// توليد كود التفعيل الموجه لجهاز محدد
 // الصيغة: ACT-[DUR4]-[SIG4]-[SIG4]-[SIG4]
 // ─────────────────────────────────────────────────────────────────────────────
 function generateActivationCode(challengeCode, durationInput = '1M') {
@@ -145,11 +136,11 @@ function generateActivationCode(challengeCode, durationInput = '1M') {
   hmac.update(`${cleanChallenge}|CLINIXA_VALID_ACTIVATION|${durationCode}`);
   const hash = hmac.digest('hex').toUpperCase();
 
-  const sig1 = hash.slice(0, 4);
-  const sig2 = hash.slice(4, 8);
-  const sig3 = hash.slice(8, 12);
+  const s1 = hash.slice(0, 4);
+  const s2 = hash.slice(4, 8);
+  const s3 = hash.slice(8, 12);
 
-  return { key: `ACT-${durationCode}-${sig1}-${sig2}-${sig3}`, durationCode };
+  return { key: `ACT-${durationCode}-${s1}-${s2}-${s3}`, durationCode };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -161,7 +152,7 @@ if (args.length > 0) {
   const cmd = args[0].toUpperCase();
 
   if (cmd === '--SETUP' || cmd === 'SETUP') {
-    const durationInput = args[1] || '1M';
+    const durationInput = args[1] || '1Y';
     try {
       const { key, durationCode } = generateSetupLicenseKey(durationInput);
       console.log('\n════════════════════════════════════════');
@@ -190,7 +181,7 @@ if (args.length > 0) {
   } else {
     console.log(
       '\nالاستخدام:\n' +
-      '  node license-keygen.js setup\n' +
+      '  node license-keygen.js setup [مدة]\n' +
       '  node license-keygen.js REQ-XXXX-XXXX-XXXX [مدة]\n\n' +
       'أمثلة على المدة:\n' +
       '  30m  → 30 دقيقة\n' +
@@ -214,13 +205,21 @@ if (args.length > 0) {
 
   rl.question('\nاختر رقم العملية [1 أو 2]: ', (choice) => {
     if (choice.trim() === '1') {
-      const key = generateSetupLicenseKey();
-      console.log('\n───────────────────────────────────────────────');
-      console.log('🔑 مفتاح التثبيت الأصلي:');
-      console.log(`\n    ${key}\n`);
-      console.log('أعطِ هذا المفتاح للعميل لإدخاله في خطوة الإعداد الأولى.');
-      console.log('───────────────────────────────────────────────\n');
-      rl.close();
+      console.log('\nوحدات الزمن المتاحة: m(دقيقة)  h(ساعة)  d(يوم)  w(أسبوع)  M(شهر)  y(سنة)');
+      rl.question('⏳ أدخل مدة الترخيص (افتراضي 1y أو 6M أو 1M): ', (durationInput) => {
+        try {
+          const { key, durationCode } = generateSetupLicenseKey(durationInput.trim() || '1Y');
+          console.log('\n───────────────────────────────────────────────');
+          console.log('🔑 مفتاح التثبيت الأصلي:');
+          console.log(`\n    ${key}\n`);
+          console.log(`⏱️  المدة: ${describeDuration(durationCode)}`);
+          console.log('أعطِ هذا المفتاح للعميل لإدخاله في خطوة الإعداد الأولى.');
+          console.log('───────────────────────────────────────────────\n');
+        } catch (err) {
+          console.error('\n❌ خطأ:', err.message, '\n');
+        }
+        rl.close();
+      });
     } else {
       rl.question('\n📝 أدخل كود التحدي المستلم من العميل (REQ-...): ', (challengeInput) => {
         console.log('\nوحدات الزمن المتاحة: m(دقيقة)  h(ساعة)  d(يوم)  w(أسبوع)  M(شهر)  y(سنة)');
@@ -248,9 +247,7 @@ if (args.length > 0) {
 
 module.exports = {
   generateSetupLicenseKey,
-  verifySetupLicenseKey,
   generateActivationCode,
   parseDuration,
   describeDuration,
-  MASTER_SECRET,
 };

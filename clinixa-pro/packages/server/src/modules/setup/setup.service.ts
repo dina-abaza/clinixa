@@ -5,7 +5,13 @@ import query from '../../db/sqlite/query';
 import { env } from '../../config/env';
 import { AppError } from '../../middlewares/error-handler.middleware';
 import { PERMISSIONS } from '@clinixa/shared';
-import { verifySetupLicenseKey, describeDurationCode, signLicenseState } from '../license/license.crypto';
+import {
+  verifySetupLicenseKey,
+  verifyActivationCode,
+  generateChallenge,
+  describeDurationCode,
+  signLicenseState,
+} from '../license/license.crypto';
 import { getMachineFingerprint } from '../license/license.fingerprint';
 import type { FirstRunInput } from './setup.validation';
 
@@ -14,11 +20,24 @@ import type { FirstRunInput } from './setup.validation';
  *              كل الإدراجات في transaction واحدة — لو أي جزء فشل، كله بيترجع (rollback)
  */
 export async function firstRunSetup(input: FirstRunInput) {
-  const keyCheck = verifySetupLicenseKey(input.license_key);
+  const machineId = getMachineFingerprint();
+  const now = new Date();
+  const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const currentChallenge = generateChallenge(machineId, currentMonthStr);
+
+  const cleanKey = input.license_key.trim().toUpperCase();
+  let keyCheck: { valid: boolean; durationMs: number; durationCode: string };
+
+  if (cleanKey.startsWith('ACT-')) {
+    keyCheck = verifyActivationCode(currentChallenge, cleanKey);
+  } else {
+    keyCheck = verifySetupLicenseKey(cleanKey);
+  }
+
   if (!keyCheck.valid) {
     throw new AppError(
       'INVALID_LICENSE',
-      'مفتاح ترخيص التثبيت غير صحيح أو غير معتمد من النظام',
+      'كود التفعيل غير صحيح أو غير متطابق مع هذا الجهاز',
       400
     );
   }

@@ -14,6 +14,7 @@ import {
   getGoogleDriveSettings,
   updateGoogleDriveSettings,
   deleteGoogleDriveSettings,
+  listGoogleDriveBackups,
 } from './backup.service';
 
 /**
@@ -130,6 +131,22 @@ export async function deleteGoogleDriveSettingsHandler(
 ): Promise<void> {
   try {
     const result = await deleteGoogleDriveSettings();
+    res.status(200).json({ ok: true, data: result, warning: null });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * @description معالجة طلب جلب قائمة ملفات النسخ من Google Drive (GET /api/backup/google-drive/files)
+ */
+export async function listGoogleDriveBackupsHandler(
+  _req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const result = await listGoogleDriveBackups();
     res.status(200).json({ ok: true, data: result, warning: null });
   } catch (err) {
     next(err);

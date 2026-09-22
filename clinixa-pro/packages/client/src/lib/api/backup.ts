@@ -65,6 +65,7 @@ export interface RestoreBackupRequest {
   backup_id?: string;
   custom_path?: string;
   backup_password?: string;
+  google_drive_file_id?: string;
 }
 
 export async function restoreBackup(payload: RestoreBackupRequest): Promise<ApiResponse<{ message: string }>> {
@@ -120,6 +121,24 @@ export async function updateGoogleDriveSettings(
 export async function deleteGoogleDriveSettings(): Promise<ApiResponse<{ message: string }>> {
   try {
     const res = await apiClient.delete<ApiResponse<{ message: string }>>('/backup/google-drive');
+    return res.data;
+  } catch (err) {
+    return extractApiError(err);
+  }
+}
+
+// ─── Google Drive Files ──────────────────────────────────────────────────────
+
+export interface GoogleDriveFileInfo {
+  id: string;
+  name: string;
+  size: number;
+  created: string;
+}
+
+export async function listGoogleDriveFiles(): Promise<ApiResponse<{ files: GoogleDriveFileInfo[] }>> {
+  try {
+    const res = await apiClient.get<ApiResponse<{ files: GoogleDriveFileInfo[] }>>('/backup/google-drive/files');
     return res.data;
   } catch (err) {
     return extractApiError(err);

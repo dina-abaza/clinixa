@@ -9,6 +9,7 @@ import {
   getGoogleDriveSettingsHandler,
   updateGoogleDriveSettingsHandler,
   deleteGoogleDriveSettingsHandler,
+  listGoogleDriveBackupsHandler,
 } from './backup.controller';
 
 const router = Router();
@@ -24,6 +25,7 @@ router.post('/restore', requirePermission('admin.edit'), restoreBackupData);
 
 // مسارات إدارة إعدادات Google Drive
 router.get('/google-drive', requirePermission('admin.view'), getGoogleDriveSettingsHandler);
+router.get('/google-drive/files', requirePermission('admin.view'), listGoogleDriveBackupsHandler);
 router.put('/google-drive', requirePermission('admin.edit'), updateGoogleDriveSettingsHandler);
 router.delete('/google-drive', requirePermission('admin.edit'), deleteGoogleDriveSettingsHandler);
 

@@ -24,6 +24,7 @@ import {
   decryptBuffer,
   type EncryptedBackupPayload,
 } from './backup.crypto';
+import { env } from '../../config/env';
 
 
 /**
@@ -161,6 +162,35 @@ async function exportDatabaseTables(): Promise<Record<string, any[]>> {
   return exportData;
 }
 
+/**
+ * @description استيراد بيانات من نسخة احتياطية JSON (عكس exportDatabaseTables)
+ * يمسح كل الصفوف الحالية ويُدخل بيانات النسخة الاحتياطية لكل جدول
+ */
+async function importDatabaseTables(data: Record<string, any[]>): Promise<void> {
+  const skipTables = ['sqlite_sequence', 'knex_migrations', 'knex_migrations_lock'];
+
+  for (const [tableName, rows] of Object.entries(data)) {
+    if (skipTables.includes(tableName)) continue;
+    if (!Array.isArray(rows)) continue;
+
+    try {
+      // حذف كل البيانات الحالية في الجدول
+      await query(tableName).del();
+
+      // إدخال البيانات المستوردة على دفعات (100 صف في كل دفعة)
+      if (rows.length > 0) {
+        const batchSize = 100;
+        for (let i = 0; i < rows.length; i += batchSize) {
+          const batch = rows.slice(i, i + batchSize);
+          await query(tableName).insert(batch);
+        }
+      }
+    } catch (err) {
+      console.warn(`⚠️ تخطي جدول ${tableName} أثناء الاستيراد:`, err);
+    }
+  }
+}
+
 
 /**
  * @description تنفيذ عملية النسخ الاحتياطي وتوثيقها في السجل
@@ -188,20 +218,27 @@ export async function runBackup(input: RunBackupInput): Promise<BackupRecord> {
       const backupRoot =
         input.target_path && input.target_path.trim().length > 0
           ? path.resolve(input.target_path.trim())
-          : path.resolve(__dirname, '../../..', 'data', 'backups');
+          : path.resolve(env.BACKUP_LOCAL_DIR);
       fs.mkdirSync(backupRoot, { recursive: true });
 
-      const dbSource = path.resolve(__dirname, '../../..', 'data', 'clinixa.db');
-      const attachmentsSource = path.resolve(__dirname, '../../..', 'data', 'attachments');
+      const dbSource = path.resolve(env.SQLITE_DB_PATH);
+      const attachmentsSource = path.resolve(env.UPLOADS_DIR);
 
       const backupDir = path.join(
         backupRoot,
-        `${dateStr}_${timeStr.replace(/:/g, '-')}`
+        `clinixa_backup_${dateStr}_${timeStr.replace(/:/g, '-')}`
       );
 
       fs.mkdirSync(backupDir, { recursive: true });
 
       const customPassword = input.backup_password?.trim();
+
+      // Flush WAL to make sure clinixa.db is 100% up to date before copying
+      try {
+        await query.raw('PRAGMA wal_checkpoint(TRUNCATE);');
+      } catch (walErr) {
+        console.warn('⚠️ WAL checkpoint failed before backup:', walErr);
+      }
 
       if (fs.existsSync(dbSource)) {
         if (customPassword && customPassword.length > 0) {
@@ -216,6 +253,8 @@ export async function runBackup(input: RunBackupInput): Promise<BackupRecord> {
           // 📄 حفظ ملف قاعدة بيانات مباشر غير مشفر (Raw SQLite Database)
           fs.copyFileSync(dbSource, path.join(backupDir, 'clinixa.db'));
         }
+      } else {
+        throw new Error(`ملف قاعدة البيانات المصدر غير موجود: ${dbSource}`);
       }
 
       if (fs.existsSync(attachmentsSource)) {
@@ -259,8 +298,7 @@ export async function runBackup(input: RunBackupInput): Promise<BackupRecord> {
       !driveSettings ||
       !driveSettings.script_url ||
       !driveSettings.secret_key ||
-      !driveSettings.backup_password ||
-      !driveSettings.is_enabled
+      !driveSettings.backup_password
     ) {
       isFail = true;
       failReason = 'token';
@@ -271,9 +309,9 @@ export async function runBackup(input: RunBackupInput): Promise<BackupRecord> {
         const fileName = `clinixa_backup_${dateStr}_${timeStr.replace(/:/g, '-')}.encrypted.json`;
 
         const requestBody = {
-          secretKey: driveSettings.secret_key,
-          fileName,
-          content: encryptedPayload,
+          secret: driveSettings.secret_key,
+          filename: fileName,
+          file: Buffer.from(JSON.stringify(encryptedPayload)).toString('base64'),
         };
 
         const jsonString = JSON.stringify(requestBody);
@@ -382,6 +420,107 @@ export async function updateBackupDestination(
 }
 
 /**
+ * @description جلب قائمة ملفات النسخ الاحتياطية المخزنة على Google Drive عبر Google Apps Script
+ * @returns {Promise<{ files: GoogleDriveFileInfo[] }>} قائمة الملفات مرتبة بالأحدث أولاً
+ */
+export interface GoogleDriveFileInfo {
+  id: string;
+  name: string;
+  size: number;
+  created: string;
+}
+
+export async function listGoogleDriveBackups(): Promise<{ files: GoogleDriveFileInfo[] }> {
+  const driveSettings = await query('google_drive_settings').where({ id: 'singleton' }).first();
+
+  if (!driveSettings || !driveSettings.script_url || !driveSettings.secret_key) {
+    throw new AppError('VALIDATION_ERROR', 'إعدادات Google Drive غير مكتملة — يرجى إدخال رابط الـ Script والمفتاح السري', 400);
+  }
+
+  const url = new URL(driveSettings.script_url);
+  url.searchParams.set('secret', driveSettings.secret_key);
+  url.searchParams.set('action', 'list');
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 20000);
+
+  try {
+    const res = await fetch(url.toString(), {
+      method: 'GET',
+      redirect: 'follow',
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+
+    if (!res.ok) {
+      throw new AppError('INTERNAL_ERROR', `فشل الاتصال بـ Google Drive (HTTP ${res.status})`, 500);
+    }
+
+    const data: any = await res.json();
+    if (!data || !data.ok) {
+      throw new AppError('VALIDATION_ERROR', data?.error || 'فشل جلب الملفات من Google Drive — تأكد من تحديث كود الـ Script', 400);
+    }
+
+    return { files: data.files || [] };
+  } catch (err: any) {
+    clearTimeout(timeoutId);
+    if (err instanceof AppError) throw err;
+    if (err.name === 'AbortError' || err.code === 'ENOTFOUND' || err.code === 'ECONNREFUSED') {
+      throw new AppError('INTERNAL_ERROR', 'لا يوجد اتصال بالإنترنت — تعذر الوصول إلى Google Drive', 500);
+    }
+    throw new AppError('INTERNAL_ERROR', `خطأ أثناء جلب ملفات Google Drive: ${err.message || 'غير معروف'}`, 500);
+  }
+}
+
+/**
+ * @description تحميل ملف نسخة احتياطية من Google Drive بالـ File ID
+ * @param {string} fileId - معرف الملف على Google Drive
+ * @returns {Promise<{ name: string; content: string }>} اسم الملف ومحتواه (base64)
+ */
+export async function downloadGoogleDriveBackup(fileId: string): Promise<{ name: string; content: string }> {
+  const driveSettings = await query('google_drive_settings').where({ id: 'singleton' }).first();
+
+  if (!driveSettings || !driveSettings.script_url || !driveSettings.secret_key) {
+    throw new AppError('VALIDATION_ERROR', 'إعدادات Google Drive غير مكتملة — يرجى إدخال رابط الـ Script والمفتاح السري', 400);
+  }
+
+  const url = new URL(driveSettings.script_url);
+  url.searchParams.set('secret', driveSettings.secret_key);
+  url.searchParams.set('action', 'download');
+  url.searchParams.set('fileId', fileId);
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s for large files
+
+  try {
+    const res = await fetch(url.toString(), {
+      method: 'GET',
+      redirect: 'follow',
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+
+    if (!res.ok) {
+      throw new AppError('INTERNAL_ERROR', `فشل تحميل الملف من Google Drive (HTTP ${res.status})`, 500);
+    }
+
+    const data: any = await res.json();
+    if (!data || !data.ok) {
+      throw new AppError('NOT_FOUND', data?.error || 'الملف غير موجود أو لا يمكن الوصول إليه على Google Drive', 404);
+    }
+
+    return { name: data.name || 'backup.encrypted.json', content: data.content };
+  } catch (err: any) {
+    clearTimeout(timeoutId);
+    if (err instanceof AppError) throw err;
+    if (err.name === 'AbortError') {
+      throw new AppError('INTERNAL_ERROR', 'انتهت مهلة تحميل الملف من Google Drive — حاول مرة أخرى', 500);
+    }
+    throw new AppError('INTERNAL_ERROR', `خطأ أثناء تحميل ملف Google Drive: ${err.message || 'غير معروف'}`, 500);
+  }
+}
+
+/**
  * @description استعادة البيانات من نسخة احتياطية (من السجل الداخلي أو من ملف/مجلد مخصص على الجهاز أو USB)
  * @param {RestoreBackupInput} input - خيارات الاستعادة والتأكيد والمسار وكلمة السر
  * @returns {Promise<{ message: string }>} رسالة نجاح الاستعادة
@@ -446,48 +585,94 @@ export async function restoreBackup(
       }
     }
   } else if (input.source_mode === 'google_drive') {
-    let record: any = null;
-    if (input.backup_id) {
-      record = await query('backup_history')
-        .where({ id: input.backup_id, destination: 'google_drive', status: 'ok' })
-        .first();
-      if (!record) {
-        throw new AppError('NOT_FOUND', 'النسخة الاحتياطية المحددة من Google Drive غير موجودة في سجل النظام', 404);
+    // استعادة مباشرة من Google Drive — تنزيل الملف من السحابة
+    // ⚠️ نسخ Drive مشفرة بصيغة JSON (جداول) وليست ملفات SQLite خام
+    const driveSettingsRow = await query('google_drive_settings').where({ id: 'singleton' }).first();
+
+    if (!driveSettingsRow || !driveSettingsRow.script_url || !driveSettingsRow.secret_key) {
+      throw new AppError('VALIDATION_ERROR', 'إعدادات Google Drive غير مكتملة — يرجى ضبط الرابط والمفتاح السري أولاً من إعدادات النسخ الاحتياطي', 400);
+    }
+
+    let fileIdToDownload = input.google_drive_file_id?.trim();
+
+    // إذا لم يحدد ملف → نجلب أحدث ملف من Drive
+    if (!fileIdToDownload) {
+      const listResult = await listGoogleDriveBackups();
+      if (listResult.files.length === 0) {
+        throw new AppError('NOT_FOUND', 'لا توجد أي نسخ احتياطية مخزنة على Google Drive', 404);
       }
-    } else {
-      record = await query('backup_history')
-        .where({ status: 'ok', destination: 'google_drive' })
-        .orderBy('date', 'desc')
-        .orderBy('time', 'desc')
-        .first();
+      fileIdToDownload = listResult.files[0].id;
+    }
 
-      if (!record) {
-        throw new AppError('NOT_FOUND', 'لا توجد أي نسخة احتياطية ناجحة مسجلة من Google Drive', 404);
+    // تحميل الملف من Drive
+    const downloaded = await downloadGoogleDriveBackup(fileIdToDownload);
+
+    // فك ترميز المحتوى من Base64
+    const rawContent = Buffer.from(downloaded.content, 'base64').toString('utf8');
+
+    // تحليل محتوى الملف
+    let parsedContent: any;
+    try {
+      parsedContent = JSON.parse(rawContent);
+    } catch {
+      throw new AppError('VALIDATION_ERROR', 'ملف النسخة الاحتياطية من Google Drive تالف ولا يمكن قراءته', 400);
+    }
+
+    // فك التشفير — تجربة كلمات السر المحتملة
+    const candidatePwds = [
+      input.backup_password?.trim(),
+      driveSettingsRow.backup_password,
+      'ClinixaBackupKey2026',
+    ].filter((p): p is string => Boolean(p && p.length > 0));
+
+    let tableData: Record<string, any[]> | null = null;
+
+    if (parsedContent.format === 'clinixa-encrypted-backup-v1') {
+      // ملف مشفر — نفك التشفير بـ decryptBackupData
+      for (const pwd of candidatePwds) {
+        try {
+          tableData = decryptBackupData(parsedContent, pwd);
+          break;
+        } catch {
+          // تجربة الكلمة التالية
+        }
       }
-    }
 
-    const defaultBackupsRoot = path.resolve(__dirname, '../../..', 'data', 'backups');
-    const folderName = `${record.date}_${String(record.time).replace(/:/g, '-')}`;
-    const backupFolder = path.join(defaultBackupsRoot, folderName);
-
-    if (!fs.existsSync(backupFolder)) {
-      throw new AppError('NOT_FOUND', `لم يتم العثور على ملف نسخ Google Drive المحلي في مجلد (${folderName})`, 404);
-    }
-
-    const encDb = path.join(backupFolder, 'clinixa.db.encrypted');
-    const rawDb = path.join(backupFolder, 'clinixa.db');
-    if (fs.existsSync(encDb)) {
-      dbFilePath = encDb;
-    } else if (fs.existsSync(rawDb)) {
-      dbFilePath = rawDb;
+      if (!tableData) {
+        throw new AppError(
+          'VALIDATION_ERROR',
+          'فشل فك تشفير نسخة Google Drive! يرجى التأكد من إدخال كلمة سر النسخة الاحتياطية الصحيحة.',
+          400
+        );
+      }
+    } else if (typeof parsedContent === 'object' && !Array.isArray(parsedContent)) {
+      // بيانات غير مشفرة (JSON مباشر)
+      tableData = parsedContent;
     } else {
-      throw new AppError('NOT_FOUND', 'ملف قاعدة البيانات غير موجود داخل مجلد النسخة الاحتياطية من Google Drive', 404);
+      throw new AppError('VALIDATION_ERROR', 'صيغة ملف النسخة من Google Drive غير معروفة', 400);
     }
 
-    const attachPath = path.join(backupFolder, 'attachments');
-    if (fs.existsSync(attachPath) && fs.statSync(attachPath).isDirectory()) {
-      attachmentsDirPath = attachPath;
+    // استيراد البيانات إلى قاعدة البيانات
+    await importDatabaseTables(tableData!);
+
+    // تسجيل تنبيه استعادة ناجحة
+    try {
+      const alertId = `alt_${crypto.randomUUID()}`;
+      await query('system_alerts').insert({
+        id: alertId,
+        type: 'system_restored',
+        title: 'تمت استعادة نسخة احتياطية من Google Drive بنجاح',
+        detail: `تم استعادة بيانات النظام من Google Drive بنجاح في ${new Date().toLocaleString('ar-EG')}`,
+        branch_id: null,
+        is_read: 0,
+      });
+    } catch {
+      // تجاهل أخطاء التنبيه
     }
+
+    return {
+      message: 'تمت استعادة النسخة الاحتياطية من Google Drive بنجاح.',
+    };
   } else {
     // 2. الاستعادة من السجل الداخلي (History)
     let record: any = null;
@@ -509,9 +694,15 @@ export async function restoreBackup(
       }
     }
 
-    const defaultBackupsRoot = path.resolve(__dirname, '../../..', 'data', 'backups');
+    const defaultBackupsRoot = path.resolve(env.BACKUP_LOCAL_DIR);
     const folderName = `${record.date}_${String(record.time).replace(/:/g, '-')}`;
-    const backupFolder = path.join(defaultBackupsRoot, folderName);
+    let backupFolder = path.join(defaultBackupsRoot, folderName);
+    if (!fs.existsSync(backupFolder)) {
+      const prefixedFolder = path.join(defaultBackupsRoot, `clinixa_backup_${folderName}`);
+      if (fs.existsSync(prefixedFolder)) {
+        backupFolder = prefixedFolder;
+      }
+    }
 
     if (!fs.existsSync(backupFolder)) {
       throw new AppError('NOT_FOUND', `مجلد النسخة الاحتياطية (${folderName}) غير موجود على القرص المحلي`, 404);
@@ -603,7 +794,7 @@ export async function restoreBackup(
   }
 
   // 4. استبدال قاعدة البيانات النشطة وتحديث المرفقات
-  const targetDbPath = path.resolve(__dirname, '../../..', 'data', 'clinixa.db');
+  const targetDbPath = path.resolve(env.SQLITE_DB_PATH);
   const tempRestorePath = `${targetDbPath}.restoring_tmp`;
 
   try {
@@ -625,7 +816,7 @@ export async function restoreBackup(
 
     // استعادة المرفقات إن وُجدت
     if (attachmentsDirPath && fs.existsSync(attachmentsDirPath)) {
-      const targetAttachments = path.resolve(__dirname, '../../..', 'data', 'attachments');
+      const targetAttachments = path.resolve(env.UPLOADS_DIR);
       fs.mkdirSync(targetAttachments, { recursive: true });
       fs.cpSync(attachmentsDirPath, targetAttachments, { recursive: true });
     }

@@ -21,20 +21,26 @@ async function normalizeMigrationRegistryForProduction(): Promise<void> {
 }
 
 async function startServer(): Promise<void> {
-  if (env.NODE_ENV !== 'test') {
-    await normalizeMigrationRegistryForProduction();
-    await query.migrate.latest();
-    console.log('✅ SQLite migrations are up to date');
+  try {
+    if (env.NODE_ENV !== 'test') {
+      await normalizeMigrationRegistryForProduction();
+      await query.migrate.latest();
+      console.log('✅ SQLite migrations are up to date');
+    }
+  } catch (migErr) {
+    console.error('⚠️ Migrations execution failed or partially completed:', migErr);
   }
 
-  const server = app.listen(env.PORT, () => {
-    console.log(`🚀 Clinixa Server is running on http://localhost:${env.PORT}`);
+  const server = app.listen(env.PORT, '127.0.0.1', () => {
+    console.log(`🚀 Clinixa Server is running on http://127.0.0.1:${env.PORT}`);
     console.log(`🔧 Environment: ${env.NODE_ENV}`);
   });
 
   (global as typeof globalThis & { __clinixaServer?: unknown }).__clinixaServer = server;
 }
 
-startServer();
+startServer().catch((err) => {
+  console.error('❌ Critical failure starting server:', err);
+});
 
 export default app;

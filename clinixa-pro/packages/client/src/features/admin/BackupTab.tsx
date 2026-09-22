@@ -8,7 +8,9 @@ import {
   getGoogleDriveSettings,
   updateGoogleDriveSettings,
   deleteGoogleDriveSettings,
+  listGoogleDriveFiles,
 } from '../../lib/api/backup';
+import type { GoogleDriveFileInfo } from '../../lib/api/backup';
 import { useAuthStore } from '../../lib/store/authStore';
 import { hasPermission } from '../../lib/permissions';
 
@@ -32,6 +34,7 @@ export function BackupTab() {
   const [toast, setToast] = useState<string | null>(null);
   const [restoreNotice, setRestoreNotice] = useState(false);
   const restoreFileInputRef = useRef<HTMLInputElement>(null);
+  const [driveFileId, setDriveFileId] = useState('');
 
   const handleBrowseFolder = async () => {
     if (window.clinixa?.selectFolder) {
@@ -82,6 +85,7 @@ export function BackupTab() {
   const [showSecretKey, setShowSecretKey] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showDriveGuide, setShowDriveGuide] = useState(false);
+  const [codeCopied, setCodeCopied] = useState(false);
 
   useEffect(() => {
     if (!toast) return;
@@ -101,6 +105,16 @@ export function BackupTab() {
     queryFn: getGoogleDriveSettings,
   });
   const driveSettings = driveQuery.data?.ok ? driveQuery.data.data : null;
+
+  // Drive files query — only fetch when user selects google_drive restore mode
+  const driveFilesQuery = useQuery({
+    queryKey: ['google-drive-files'],
+    queryFn: listGoogleDriveFiles,
+    enabled: restoreSourceMode === 'google_drive',
+    staleTime: 30_000,
+  });
+  const driveFiles: GoogleDriveFileInfo[] = driveFilesQuery.data?.ok ? driveFilesQuery.data.data.files : [];
+  const driveFilesError = driveFilesQuery.data?.ok === false ? driveFilesQuery.data.error.message : null;
 
   // Sync form from server on load
   useEffect(() => {
@@ -125,6 +139,24 @@ export function BackupTab() {
     },
   });
 
+  const runDriveMutation = useMutation({
+    mutationFn: () =>
+      runBackup({
+        destination: 'google_drive',
+        kind: 'manual',
+      }),
+    onSuccess: (res) => {
+      if (!res.ok) return;
+      queryClient.invalidateQueries({ queryKey: ['backup-history'] });
+      queryClient.invalidateQueries({ queryKey: ['google-drive-files'] });
+      setToast(
+        res.data.status === 'ok'
+          ? 'تم إنشاء النسخة الاحتياطية ورفعها إلى Google Drive بنجاح'
+          : 'فشل رفع النسخة إلى Google Drive — يرجى مراجعة سجل النسخ'
+      );
+    },
+  });
+
   const restoreMutation = useMutation({
     mutationFn: () =>
       restoreBackup({
@@ -133,6 +165,7 @@ export function BackupTab() {
         backup_id: restoreSourceMode === 'history' ? (restoreBackupId || undefined) : undefined,
         custom_path: restoreSourceMode === 'custom_path' ? (restoreCustomPath.trim() || undefined) : undefined,
         backup_password: restorePassword.trim() || undefined,
+        google_drive_file_id: restoreSourceMode === 'google_drive' ? (driveFileId || undefined) : undefined,
       }),
     onSuccess: (res) => {
       if (res.ok) {
@@ -144,6 +177,8 @@ export function BackupTab() {
       }
     },
   });
+
+  const [driveValidationError, setDriveValidationError] = useState<string | null>(null);
 
   const saveDriveMutation = useMutation({
     mutationFn: () =>
@@ -158,9 +193,28 @@ export function BackupTab() {
       queryClient.invalidateQueries({ queryKey: ['google-drive-settings'] });
       setGdSecretKey('');
       setGdPassword('');
+      setDriveValidationError(null);
       setToast(t('admin.backup.toasts.driveSettingsSaved'));
     },
   });
+
+  const handleSaveDriveSettings = () => {
+    setDriveValidationError(null);
+    const url = gdScriptUrl.trim();
+    if (!url) {
+      setDriveValidationError('يرجى إدخال رابط Google Apps Script أولاً');
+      return;
+    }
+    if (!url.startsWith('https://script.google.com/')) {
+      setDriveValidationError('الرابط يجب أن يبدأ بـ https://script.google.com/');
+      return;
+    }
+    if (!driveSettings?.has_secret_key && !gdSecretKey.trim()) {
+      setDriveValidationError('يرجى إدخال المفتاح السري (Secret Key) لحماية وتأمين الاتصال');
+      return;
+    }
+    saveDriveMutation.mutate();
+  };
 
   const deleteDriveMutation = useMutation({
     mutationFn: deleteGoogleDriveSettings,
@@ -172,13 +226,15 @@ export function BackupTab() {
       setGdPassword('');
       setGdEnabled(false);
       setShowDeleteConfirm(false);
+      setDriveValidationError(null);
       setToast(t('admin.backup.toasts.driveSettingsDeleted'));
     },
   });
 
   const restoreError = restoreMutation.data?.ok === false ? restoreMutation.data.error.message : null;
   const runError = runMutation.data?.ok === false ? runMutation.data.error.message : null;
-  const savedriveError = saveDriveMutation.data?.ok === false ? saveDriveMutation.data.error.message : null;
+  const runDriveError = runDriveMutation.data?.ok === false ? runDriveMutation.data.error.message : null;
+  const savedriveError = driveValidationError || (saveDriveMutation.data?.ok === false ? saveDriveMutation.data.error.message : null);
 
   return (
     <>
@@ -457,57 +513,122 @@ export function BackupTab() {
             </div>
           </div>
 
-          {/* Enable Toggle */}
-          <label
-            htmlFor="gd-enabled"
+          {/* Enable Toggle Card */}
+          <div
+            id="gd-enable-toggle-card"
+            role="button"
+            tabIndex={0}
+            onClick={() => setGdEnabled((prev) => !prev)}
+            onKeyDown={(e) => {
+              if (e.key === ' ' || e.key === 'Enter') {
+                e.preventDefault();
+                setGdEnabled((prev) => !prev);
+              }
+            }}
             style={{
               display: 'flex',
               alignItems: 'center',
+              justifyContent: 'space-between',
               gap: 'var(--space-3)',
               cursor: 'pointer',
-              padding: 'var(--space-3) 0',
-              marginTop: 'var(--space-2)',
+              padding: 'var(--space-3) var(--space-4)',
+              marginTop: 'var(--space-3)',
+              marginBottom: 'var(--space-2)',
+              borderRadius: 'var(--radius-md, 8px)',
+              border: gdEnabled ? '1.5px solid #10b981' : '1.5px solid var(--color-border)',
+              background: gdEnabled
+                ? 'rgba(16, 185, 129, 0.08)'
+                : 'var(--color-bg-secondary, rgba(0,0,0,0.02))',
+              transition: 'all 0.2s ease',
+              userSelect: 'none',
             }}
           >
-            <span
-              role="switch"
-              aria-checked={gdEnabled}
-              style={{
-                position: 'relative',
-                display: 'inline-block',
-                width: 44,
-                height: 24,
-                borderRadius: 12,
-                background: gdEnabled ? 'var(--color-primary)' : 'var(--color-border)',
-                transition: 'background 0.2s',
-                flexShrink: 0,
-              }}
-            >
-              <input
-                id="gd-enabled"
-                type="checkbox"
-                checked={gdEnabled}
-                onChange={(e) => setGdEnabled(e.target.checked)}
-                style={{ position: 'absolute', opacity: 0, width: 0, height: 0 }}
-              />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+              <div
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: '50%',
+                  background: gdEnabled ? '#10b981' : 'var(--color-bg-muted, rgba(0,0,0,0.08))',
+                  color: gdEnabled ? '#ffffff' : 'var(--color-text-secondary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s ease',
+                  flexShrink: 0,
+                }}
+              >
+                {gdEnabled ? (
+                  <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                ) : (
+                  <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                )}
+              </div>
+
+              <div>
+                <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: gdEnabled ? '#047857' : 'var(--color-text-primary)' }}>
+                  {t('admin.backup.googleDrive.enabledLabel')}
+                </div>
+                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)', marginTop: 2 }}>
+                  {gdEnabled
+                    ? 'سيتم تفعيل المزامنة ورفع النسخ الاحتياطية تلقائياً إلى السحابة'
+                    : 'النسخ السحابي متوقف حالياً — انقر هنا للتفعيل'}
+                </div>
+              </div>
+            </div>
+
+            {/* Visual Switch Button */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
               <span
                 style={{
-                  position: 'absolute',
-                  top: 2,
-                  insetInlineStart: gdEnabled ? 22 : 2,
-                  width: 20,
-                  height: 20,
-                  borderRadius: '50%',
-                  background: '#fff',
-                  boxShadow: '0 1px 3px rgba(0,0,0,.2)',
-                  transition: 'inset-inline-start 0.2s',
+                  display: 'inline-block',
+                  padding: '2px 8px',
+                  borderRadius: 9999,
+                  fontSize: 'var(--text-xs)',
+                  fontWeight: 600,
+                  background: gdEnabled ? '#10b981' : '#9ca3af',
+                  color: '#ffffff',
+                  transition: 'all 0.2s ease',
                 }}
-              />
-            </span>
-            <span style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)' }}>
-              {t('admin.backup.googleDrive.enabledLabel')}
-            </span>
-          </label>
+              >
+                {gdEnabled ? 'مفعّل ✓' : 'معطّل ✕'}
+              </span>
+
+              <div
+                role="switch"
+                aria-checked={gdEnabled}
+                style={{
+                  position: 'relative',
+                  width: 48,
+                  height: 26,
+                  borderRadius: 13,
+                  background: gdEnabled ? '#10b981' : '#cbd5e1',
+                  transition: 'background 0.2s ease',
+                  flexShrink: 0,
+                  padding: 3,
+                  boxSizing: 'border-box',
+                  direction: 'ltr',
+                }}
+              >
+                <div
+                  style={{
+                    width: 20,
+                    height: 20,
+                    borderRadius: '50%',
+                    background: '#ffffff',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.25)',
+                    transform: gdEnabled ? 'translateX(22px)' : 'translateX(0px)',
+                    transition: 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                  }}
+                />
+              </div>
+            </div>
+          </div>
 
           {/* Error */}
           <div className={`form-error${savedriveError ? ' on' : ''}`} role="alert">
@@ -522,19 +643,44 @@ export function BackupTab() {
               id="gd-save-btn"
               className={`btn btn-primary btn-inline${saveDriveMutation.isPending ? ' loading' : ''}`}
               disabled={saveDriveMutation.isPending}
-              onClick={() => saveDriveMutation.mutate()}
+              onClick={handleSaveDriveSettings}
             >
               <svg className="spinner" width={18} height={18} aria-hidden="true"><use href="#i-loader" /></svg>
               <svg width={18} height={18} aria-hidden="true"><use href="#i-cloud" /></svg>
               <span>{t('admin.backup.googleDrive.save')}</span>
             </button>
 
+            {/* زرار نسخ احتياطي مباشر لـ Google Drive */}
+            {driveSettings && driveSettings.has_secret_key && driveSettings.script_url && (
+              <button
+                type="button"
+                id="gd-backup-now-btn"
+                className={`btn btn-secondary btn-inline${runDriveMutation.isPending ? ' loading' : ''}`}
+                disabled={runDriveMutation.isPending}
+                onClick={() => runDriveMutation.mutate()}
+                style={{
+                  background: 'rgba(16, 185, 129, 0.12)',
+                  borderColor: '#10b981',
+                  color: '#047857',
+                  fontWeight: 600,
+                }}
+              >
+                <svg className="spinner" width={18} height={18} aria-hidden="true"><use href="#i-loader" /></svg>
+                <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242" />
+                  <path d="M12 12v9" />
+                  <path d="m16 16-4-4-4 4" />
+                </svg>
+                <span>إنشاء نسخة احتياطية على Google Drive الآن</span>
+              </button>
+            )}
+
             {driveSettings && (driveSettings.script_url || driveSettings.has_secret_key || driveSettings.has_backup_password) && (
               <button
                 type="button"
                 id="gd-delete-btn"
                 className="btn btn-secondary btn-inline"
-                style={{ color: 'var(--color-status-error-text)' }}
+                style={{ color: 'var(--color-status-error-text)', marginInlineStart: 'auto' }}
                 onClick={() => setShowDeleteConfirm(true)}
               >
                 <svg width={18} height={18} aria-hidden="true"><use href="#i-trash" /></svg>
@@ -542,6 +688,13 @@ export function BackupTab() {
               </button>
             )}
           </div>
+
+          {runDriveError && (
+            <div className="form-error on" role="alert" style={{ marginTop: 'var(--space-2)' }}>
+              <svg width={18} height={18} aria-hidden="true"><use href="#i-alert-circle" /></svg>
+              <span>{runDriveError}</span>
+            </div>
+          )}
         </div>
       )}
 
@@ -651,19 +804,135 @@ export function BackupTab() {
 
             {/* الحقول بحسب المصدر المختار */}
             {restoreSourceMode === 'google_drive' ? (
-              <div className="form-grid">
-                <div className="form-field">
-                  <label htmlFor="bk-restore-drive-select">{t('admin.backup.restoreSelectLabel')}</label>
-                  <div className="input-wrap no-icon">
-                    <select id="bk-restore-drive-select" value={restoreBackupId} onChange={(e) => setRestoreBackupId(e.target.value)}>
-                      <option value="">{t('admin.backup.restoreLatestOk')}</option>
-                      {items.filter((b) => b.destination === 'google_drive' && b.status === 'ok').map((b) => (
-                        <option key={b.id} value={b.id}>
-                          {b.date} {b.time} — {t(`admin.backup.destinations.${b.destination}`)}
-                        </option>
-                      ))}
-                    </select>
-                    <span className="chev"><svg width={16} height={16} aria-hidden="true"><use href="#i-chevron-down" /></svg></span>
+              <div style={{ marginBottom: 'var(--space-4)' }}>
+                {/* حالة التحميل */}
+                {driveFilesQuery.isLoading && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-4)', color: 'var(--color-text-secondary)' }}>
+                    <svg className="spinner" width={18} height={18} aria-hidden="true" style={{ animation: 'spin 1s linear infinite' }}><use href="#i-loader" /></svg>
+                    <span>{t('admin.backup.driveFilesLoading')}</span>
+                  </div>
+                )}
+
+                {/* خطأ في جلب الملفات */}
+                {driveFilesError && (
+                  <div className="form-error on" role="alert" style={{ marginBottom: 'var(--space-3)' }}>
+                    <svg width={18} height={18} aria-hidden="true"><use href="#i-alert-circle" /></svg>
+                    <span>{driveFilesError}</span>
+                  </div>
+                )}
+
+                {/* لا توجد ملفات */}
+                {!driveFilesQuery.isLoading && !driveFilesError && driveFiles.length === 0 && (
+                  <div style={{
+                    padding: 'var(--space-4)',
+                    background: 'var(--color-bg-secondary, rgba(0,0,0,0.03))',
+                    borderRadius: 'var(--radius-md, 8px)',
+                    border: '1px solid var(--color-border)',
+                    textAlign: 'center',
+                    color: 'var(--color-text-secondary)',
+                  }}>
+                    <svg width={24} height={24} aria-hidden="true" style={{ marginBottom: 'var(--space-2)', opacity: 0.5 }}><use href="#i-cloud" /></svg>
+                    <p style={{ margin: 0, fontSize: 'var(--text-sm)' }}>{t('admin.backup.driveFilesEmpty')}</p>
+                  </div>
+                )}
+
+                {/* قائمة الملفات */}
+                {driveFiles.length > 0 && (
+                  <div>
+                    <label style={{ display: 'block', marginBottom: 'var(--space-2)', fontSize: 'var(--text-sm)', fontWeight: 500 }}>
+                      {t('admin.backup.driveFilesSelectLabel')}
+                    </label>
+                    <div style={{
+                      maxHeight: 220,
+                      overflow: 'auto',
+                      border: '1px solid var(--color-border)',
+                      borderRadius: 'var(--radius-md, 8px)',
+                    }}>
+                      {driveFiles.map((f) => {
+                        const isSelected = driveFileId === f.id;
+                        const sizeKb = (f.size / 1024).toFixed(1);
+                        const sizeMb = (f.size / (1024 * 1024)).toFixed(2);
+                        const sizeStr = f.size >= 1024 * 1024 ? `${sizeMb} MB` : `${sizeKb} KB`;
+                        const dateStr = f.created ? new Date(f.created).toLocaleString('ar-EG', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+
+                        return (
+                          <button
+                            key={f.id}
+                            type="button"
+                            onClick={() => setDriveFileId(isSelected ? '' : f.id)}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 'var(--space-3)',
+                              width: '100%',
+                              padding: 'var(--space-3) var(--space-4)',
+                              background: isSelected ? 'var(--color-primary-light, rgba(16, 185, 129, 0.08))' : 'transparent',
+                              border: 'none',
+                              borderBottom: '1px solid var(--color-border)',
+                              cursor: 'pointer',
+                              textAlign: 'start',
+                              transition: 'background 0.15s',
+                              color: 'inherit',
+                              font: 'inherit',
+                            }}
+                          >
+                            <div style={{
+                              width: 22, height: 22, borderRadius: '50%',
+                              border: `2px solid ${isSelected ? 'var(--color-primary)' : 'var(--color-border)'}`,
+                              background: isSelected ? 'var(--color-primary)' : 'transparent',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              flexShrink: 0, transition: 'all 0.15s',
+                            }}>
+                              {isSelected && (
+                                <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+                                  <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                              )}
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{
+                                fontSize: 'var(--text-sm)', fontWeight: 500, direction: 'ltr', textAlign: 'start',
+                                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                              }}>
+                                {f.name}
+                              </div>
+                              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)', marginTop: 2 }}>
+                                {dateStr} — {sizeStr}
+                              </div>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <p style={{ margin: 'var(--space-2) 0 0', fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>
+                      {driveFileId ? t('admin.backup.driveFileSelected') : t('admin.backup.driveFileSelectHint')}
+                    </p>
+                  </div>
+                )}
+
+                {/* كلمة سر فك التشفير */}
+                <div className="form-field" style={{ maxWidth: 450, marginTop: 'var(--space-3)' }}>
+                  <label htmlFor="bk-restore-drive-password">{t('admin.backup.restorePasswordLabel')}</label>
+                  <div className="input-wrap">
+                    <svg width={18} height={18} aria-hidden="true"><use href="#i-lock" /></svg>
+                    <input
+                      id="bk-restore-drive-password"
+                      type={showRestorePassword ? 'text' : 'password'}
+                      placeholder={t('admin.backup.restorePasswordPlaceholder')}
+                      value={restorePassword}
+                      onChange={(e) => setRestorePassword(e.target.value)}
+                      dir="ltr"
+                      autoComplete="new-password"
+                    />
+                    <button
+                      type="button"
+                      className="input-action"
+                      aria-label={showRestorePassword ? 'إخفاء' : 'إظهار'}
+                      onClick={() => setShowRestorePassword((v) => !v)}
+                      style={{ position: 'absolute', insetInlineEnd: 'var(--space-3)', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-secondary)' }}
+                    >
+                      <svg width={16} height={16} aria-hidden="true"><use href={showRestorePassword ? '#i-eye-off' : '#i-eye'} /></svg>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -938,45 +1207,206 @@ export function BackupTab() {
                 <p style={{ margin: 0, color: 'var(--color-text-secondary)', fontSize: 'var(--text-sm)', paddingInlineStart: 40 }}>
                   {t('admin.backup.googleDrive.guideStep2Desc')}
                 </p>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginInlineStart: 40, marginTop: 'var(--space-2)', marginBottom: 'var(--space-2)' }}>
+                  <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)', fontWeight: 500 }}>
+                    كود Google Apps Script المحدث (يدعم النسخ والاسترجاع):
+                  </span>
+                  <button
+                    type="button"
+                    id="gd-copy-script-code-btn"
+                    className={`btn btn-sm ${codeCopied ? 'btn-primary' : 'btn-secondary'}`}
+                    onClick={() => {
+                      const codeToCopy = `var SECRET = "YOUR_SECRET_KEY_HERE";
+
+function doPost(e) {
+  try {
+    if (!e || !e.postData || !e.postData.contents) {
+      return jsonResponse({ ok: false, error: "No post data received" });
+    }
+    var data = JSON.parse(e.postData.contents);
+    if (data.secret !== SECRET) {
+      return jsonResponse({ ok: false, error: "Invalid secret key (unauthorized)" });
+    }
+    var folder = getOrCreateFolder();
+    var blob = Utilities.newBlob(
+      Utilities.base64Decode(data.file),
+      "application/octet-stream",
+      data.filename || "backup.encrypted.json"
+    );
+    var file = folder.createFile(blob);
+    return jsonResponse({ ok: true, fileId: file.getId(), url: file.getUrl() });
+  } catch (err) {
+    return jsonResponse({ ok: false, error: err.toString() });
+  }
+}
+
+function doGet(e) {
+  try {
+    var secret = (e && e.parameter && e.parameter.secret) ? e.parameter.secret : "";
+    if (secret !== SECRET) {
+      return jsonResponse({ ok: false, error: "Invalid secret key (unauthorized)" });
+    }
+    var action = (e && e.parameter && e.parameter.action) ? e.parameter.action : "list";
+    var folder = getOrCreateFolder();
+    
+    if (action === "list") {
+      var files = folder.getFiles();
+      var result = [];
+      while (files.hasNext()) {
+        var f = files.next();
+        result.push({
+          id: f.getId(),
+          name: f.getName(),
+          size: f.getSize(),
+          created: f.getDateCreated().toISOString()
+        });
+      }
+      result.sort(function(a, b) { return b.created.localeCompare(a.created); });
+      return jsonResponse({ ok: true, files: result });
+    }
+    
+    if (action === "download") {
+      var fileId = e && e.parameter && e.parameter.fileId;
+      if (!fileId) {
+        return jsonResponse({ ok: false, error: "Missing fileId parameter" });
+      }
+      var file = DriveApp.getFileById(fileId);
+      var content = Utilities.base64Encode(file.getBlob().getBytes());
+      return jsonResponse({ ok: true, name: file.getName(), content: content });
+    }
+    
+    return jsonResponse({ ok: false, error: "Unknown action: " + action });
+  } catch (err) {
+    return jsonResponse({ ok: false, error: err.toString() });
+  }
+}
+
+function getOrCreateFolder() {
+  var folders = DriveApp.getFoldersByName("Clinixa-Backups");
+  return folders.hasNext() ? folders.next() : DriveApp.createFolder("Clinixa-Backups");
+}
+
+function jsonResponse(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}`;
+                      navigator.clipboard.writeText(codeToCopy);
+                      setCodeCopied(true);
+                      setTimeout(() => setCodeCopied(false), 2500);
+                    }}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '4px 12px',
+                      fontSize: 'var(--text-xs)',
+                      borderRadius: 'var(--radius-sm, 6px)',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    {codeCopied ? (
+                      <>
+                        <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                        <span>تم نسخ الكود بنجاح ✓</span>
+                      </>
+                    ) : (
+                      <>
+                        <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                        </svg>
+                        <span>نسخ الكود بالكامل</span>
+                      </>
+                    )}
+                  </button>
+                </div>
                 <div
                   dir="ltr"
                   style={{
-                    marginTop: 'var(--space-2)', marginInlineStart: 40,
+                    marginInlineStart: 40,
                     padding: 'var(--space-3) var(--space-4)',
                     background: 'var(--color-bg-secondary, rgba(0,0,0,0.04))',
                     borderRadius: 'var(--radius-md, 8px)',
                     fontFamily: 'monospace', fontSize: 'var(--text-xs)',
                     whiteSpace: 'pre-wrap', wordBreak: 'break-all',
                     border: '1px solid var(--color-border)',
-                    maxHeight: 200, overflow: 'auto',
+                    maxHeight: 340, overflow: 'auto',
                   }}
                 >
-{`function doPost(e) {
-  var secret = "YOUR_SECRET_KEY_HERE";
-  var data = JSON.parse(e.postData.contents);
+{`var SECRET = "YOUR_SECRET_KEY_HERE";
 
-  if (data.secret !== secret) {
-    return ContentService
-      .createTextOutput(JSON.stringify({ ok: false, error: "unauthorized" }))
-      .setMimeType(ContentService.MimeType.JSON);
+function doPost(e) {
+  try {
+    if (!e || !e.postData || !e.postData.contents) {
+      return jsonResponse({ ok: false, error: "No post data received" });
+    }
+    var data = JSON.parse(e.postData.contents);
+    if (data.secret !== SECRET) {
+      return jsonResponse({ ok: false, error: "Invalid secret key (unauthorized)" });
+    }
+    var folder = getOrCreateFolder();
+    var blob = Utilities.newBlob(
+      Utilities.base64Decode(data.file),
+      "application/octet-stream",
+      data.filename || "backup.encrypted.json"
+    );
+    var file = folder.createFile(blob);
+    return jsonResponse({ ok: true, fileId: file.getId(), url: file.getUrl() });
+  } catch (err) {
+    return jsonResponse({ ok: false, error: err.toString() });
   }
+}
 
-  var folder = DriveApp.getRootFolder();
+function doGet(e) {
+  try {
+    var secret = (e && e.parameter && e.parameter.secret) ? e.parameter.secret : "";
+    if (secret !== SECRET) {
+      return jsonResponse({ ok: false, error: "Invalid secret key (unauthorized)" });
+    }
+    var action = (e && e.parameter && e.parameter.action) ? e.parameter.action : "list";
+    var folder = getOrCreateFolder();
+    
+    if (action === "list") {
+      var files = folder.getFiles();
+      var result = [];
+      while (files.hasNext()) {
+        var f = files.next();
+        result.push({
+          id: f.getId(),
+          name: f.getName(),
+          size: f.getSize(),
+          created: f.getDateCreated().toISOString()
+        });
+      }
+      result.sort(function(a, b) { return b.created.localeCompare(a.created); });
+      return jsonResponse({ ok: true, files: result });
+    }
+    
+    if (action === "download") {
+      var fileId = e && e.parameter && e.parameter.fileId;
+      if (!fileId) {
+        return jsonResponse({ ok: false, error: "Missing fileId parameter" });
+      }
+      var file = DriveApp.getFileById(fileId);
+      var content = Utilities.base64Encode(file.getBlob().getBytes());
+      return jsonResponse({ ok: true, name: file.getName(), content: content });
+    }
+    
+    return jsonResponse({ ok: false, error: "Unknown action: " + action });
+  } catch (err) {
+    return jsonResponse({ ok: false, error: err.toString() });
+  }
+}
+
+function getOrCreateFolder() {
   var folders = DriveApp.getFoldersByName("Clinixa-Backups");
-  if (folders.hasNext()) folder = folders.next();
-  else folder = DriveApp.createFolder("Clinixa-Backups");
+  return folders.hasNext() ? folders.next() : DriveApp.createFolder("Clinixa-Backups");
+}
 
-  var blob = Utilities.newBlob(
-    Utilities.base64Decode(data.file),
-    "application/octet-stream",
-    data.filename || "backup.db.encrypted"
-  );
-  var file = folder.createFile(blob);
-
-  return ContentService
-    .createTextOutput(JSON.stringify({
-      ok: true, fileId: file.getId(), url: file.getUrl()
-    }))
+function jsonResponse(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
 }`}
                 </div>

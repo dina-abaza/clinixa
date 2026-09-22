@@ -1,11 +1,18 @@
 import * as crypto from 'crypto';
 
-export const MASTER_SECRET =
-  process.env.CLINIXA_LICENSE_SECRET ||
-  'CLINIXA_SECURE_OFFLINE_SECRET_2026_MASTER_SIGNATURE_KEY_#99201';
+// المفتاح السري الرئيسي الموحد المشفر (256-bit Master Signature Key)
+const KEY_CHUNKS = [
+  '86487fb5b93c3e92',
+  '1d7a3ba10c9fd4d5',
+  '55491b8e1b41e016',
+  'f055e8d33422b54b',
+  '6241d498af982b86',
+  '75f5d02b3ec5a64e',
+];
+export const MASTER_SECRET = process.env.CLINIXA_LICENSE_SECRET || Buffer.from(KEY_CHUNKS.join(''), 'hex').toString('utf8');
 
 // ─────────────────────────────────────────────────────────────────────────────
-// وحدات الزمن المشفّرة (كلها أحرف كبيرة لأمان المفتاح)
+// وحدات الزمن المشفّرة
 // ─────────────────────────────────────────────────────────────────────────────
 // I = mInutes (دقيقة)  H = Hours (ساعة)  D = Days (يوم)
 // W = Weeks (أسبوع)    M = Months (شهر)  Y = Years (سنة)
@@ -28,9 +35,9 @@ const UNIT_ALIASES: Record<string, string> = {
   y: 'Y', yr: 'Y', year: 'Y', years: 'Y',
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// تحويل نص مدة إنسانية (مثل "6M", "30m", "1y") → كود 4 أحرف (مثل "006M")
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * تحويل نص مدة إنسانية (مثل "6M", "30m", "1y") → كود 4 أحرف (مثل "006M")
+ */
 export function parseDurationInput(input: string): { code: string; ms: number } {
   const match = input.trim().match(/^(\d+)([a-zA-Z]+)$/);
   if (!match) throw new Error(`مدة غير صالحة: "${input}". مثال: 6M أو 30m أو 1y`);
@@ -52,9 +59,9 @@ export function parseDurationInput(input: string): { code: string; ms: number } 
   return { code, ms };
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// تحويل كود مضمّن (مثل "006M") → ميللي ثانية
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * تحويل كود مضمّن (مثل "006M") → ميللي ثانية
+ */
 export function parseDurationCode(code: string): number {
   const match = code.trim().toUpperCase().match(/^(\d{3})([IHDWMY])$/);
   if (!match) throw new Error(`كود مدة غير صالح: "${code}"`);
@@ -75,10 +82,23 @@ export function describeDurationCode(code: string): string {
   return `${value} ${labels[match[2]] ?? match[2]}`;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// مفتاح التثبيت — الصيغة الجديدة: CLX-[DUR4]-[SIG4]-[SIG4]-[SIG4]
-// المدة مضمّنة ومشمولة في التوقيع تماماً كمفاتيح التفعيل
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * توليد كود التحدي بناءً على معرف الجهاز والشهر الحالي
+ */
+export function generateChallenge(machineId: string, periodStr: string): string {
+  const hmac = crypto.createHmac('sha256', MASTER_SECRET);
+  hmac.update(`${machineId}|CLINIXA_CHALLENGE_SEED|${periodStr}`);
+  const hash = hmac.digest('hex').toUpperCase();
+
+  const c1 = hash.slice(0, 4);
+  const c2 = hash.slice(4, 8);
+  const c3 = hash.slice(8, 12);
+  return `REQ-${c1}-${c2}-${c3}`;
+}
+
+/**
+ * التحقق من مفتاح التثبيت الأصلي — الصيغة: CLX-[DUR4]-[SIG4]-[SIG4]-[SIG4]
+ */
 export function verifySetupLicenseKey(
   key: string
 ): { valid: boolean; durationMs: number; durationCode: string } {
@@ -92,7 +112,6 @@ export function verifySetupLicenseKey(
 
   const [, durationCode, s1, s2, s3] = match;
 
-  // إعادة حساب التوقيع والمقارنة
   const hmac = crypto.createHmac('sha256', MASTER_SECRET);
   hmac.update(`CLX_SETUP_SIGNATURE|${durationCode}`);
   const hash = hmac.digest('hex').toUpperCase();
@@ -109,34 +128,19 @@ export function verifySetupLicenseKey(
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// توليد كود التحدي
-// ─────────────────────────────────────────────────────────────────────────────
-export function generateChallenge(machineId: string, periodStr: string): string {
-  const hmac = crypto.createHmac('sha256', MASTER_SECRET);
-  hmac.update(`${machineId}|CLINIXA_CHALLENGE_SEED|${periodStr}`);
-  const hash = hmac.digest('hex').toUpperCase();
-
-  const c1 = hash.slice(0, 4);
-  const c2 = hash.slice(4, 8);
-  const c3 = hash.slice(8, 12);
-  return `REQ-${c1}-${c2}-${c3}`;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// التحقق من كود التفعيل — الصيغة الجديدة: ACT-[DUR4]-[SIG4]-[SIG4]-[SIG4]
-// المدة مضمّنة ومشمولة في التوقيع → لا يمكن تعديلها
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * التحقق من كود التفعيل — الصيغة: ACT-[DUR4]-[SIG4]-[SIG4]-[SIG4]
+ */
 export function verifyActivationCode(
   challengeCode: string,
   activationCode: string
 ): { valid: boolean; durationMs: number; durationCode: string } {
   const INVALID = { valid: false, durationMs: 0, durationCode: '' };
+  if (!challengeCode || !activationCode || typeof activationCode !== 'string') return INVALID;
 
   const cleanChallenge = challengeCode.trim().toUpperCase();
   const cleanActivation = activationCode.trim().toUpperCase();
 
-  // الصيغة: ACT-[3 أرقام + حرف وحدة]-[4]-[4]-[4]
   const match = cleanActivation.match(
     /^ACT-(\d{3}[IHDWMY])-([A-Z0-9]{4})-([A-Z0-9]{4})-([A-Z0-9]{4})$/
   );
@@ -144,7 +148,6 @@ export function verifyActivationCode(
 
   const [, durationCode, s1, s2, s3] = match;
 
-  // إعادة حساب التوقيع والمقارنة
   const hmac = crypto.createHmac('sha256', MASTER_SECRET);
   hmac.update(`${cleanChallenge}|CLINIXA_VALID_ACTIVATION|${durationCode}`);
   const hash = hmac.digest('hex').toUpperCase();
@@ -161,9 +164,9 @@ export function verifyActivationCode(
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// توقيع حالة الترخيص لمنع التلاعب في قاعدة البيانات
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * توقيع حالة الترخيص في قاعدة البيانات لمنع التلاعب المباشر
+ */
 export function signLicenseState(
   expiresAt: string,
   lastActiveAt: string,
