@@ -242,7 +242,7 @@ export function BackupTab() {
       {canEdit && (
         <div className="detail-card glass" style={{ marginBottom: 'var(--space-5)' }}>
           <h2 style={{ marginTop: 0 }}>{t('admin.tabs.backup')}</h2>
-          
+
           <div className="form-field" style={{ margin: 'var(--space-3) 0' }}>
             <label style={{ display: 'block', marginBottom: 'var(--space-2)' }}>{t('admin.backup.customPathLabel')}</label>
             <div
@@ -372,10 +372,10 @@ export function BackupTab() {
         <div className="detail-card glass" style={{ marginBottom: 'var(--space-5)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-2)' }}>
             <svg width={24} height={24} viewBox="0 0 24 24" fill="none" aria-hidden="true" style={{ flexShrink: 0, color: '#4285F4' }}>
-              <path d="M6.28 14.97L2 22h8.57l4.28-7.03H6.28z" fill="#0066DA"/>
-              <path d="M14.85 14.97H6.28L10.57 8l4.28 6.97z" fill="#00AC47"/>
-              <path d="M14.85 14.97L10.57 8l4.28-6.97L22 14.97h-7.15z" fill="#EA4335"/>
-              <path d="M22 14.97H14.85l-4.28 7.03H22v-7.03z" fill="#00832D" opacity=".8"/>
+              <path d="M6.28 14.97L2 22h8.57l4.28-7.03H6.28z" fill="#0066DA" />
+              <path d="M14.85 14.97H6.28L10.57 8l4.28 6.97z" fill="#00AC47" />
+              <path d="M14.85 14.97L10.57 8l4.28-6.97L22 14.97h-7.15z" fill="#EA4335" />
+              <path d="M22 14.97H14.85l-4.28 7.03H22v-7.03z" fill="#00832D" opacity=".8" />
             </svg>
             <div style={{ flex: 1 }}>
               <h2 style={{ margin: 0 }}>{t('admin.backup.googleDrive.sectionTitle')}</h2>
@@ -727,27 +727,27 @@ export function BackupTab() {
             <tbody>
               {isLoading
                 ? Array.from({ length: 3 }).map((_, i) => (
-                    <tr key={i}>
-                      <td colSpan={7}><span className="skel" style={{ width: '90%' }} /></td>
-                    </tr>
-                  ))
+                  <tr key={i}>
+                    <td colSpan={7}><span className="skel" style={{ width: '90%' }} /></td>
+                  </tr>
+                ))
                 : items.map((record) => (
-                    <tr key={record.id}>
-                      <td className="num">{record.date}</td>
-                      <td className="num">{record.time}</td>
-                      <td className="c-status">
-                        {record.status === 'ok' ? (
-                          <span className="badge badge-success">{t('admin.backup.statusOk')}</span>
-                        ) : (
-                          <span className="badge badge-error">{t('admin.backup.statusFail')}</span>
-                        )}
-                      </td>
-                      <td>{record.fail_reason ? t(`admin.backup.failReasons.${record.fail_reason}`) : '—'}</td>
-                      <td className="num">{record.size_mb !== null ? `${record.size_mb} MB` : '—'}</td>
-                      <td>{record.kind === 'manual' ? t('admin.backup.kindManual') : t('admin.backup.kindAuto')}</td>
-                      <td>{t(`admin.backup.destinations.${record.destination}`)}</td>
-                    </tr>
-                  ))}
+                  <tr key={record.id}>
+                    <td className="num">{record.date}</td>
+                    <td className="num">{record.time}</td>
+                    <td className="c-status">
+                      {record.status === 'ok' ? (
+                        <span className="badge badge-success">{t('admin.backup.statusOk')}</span>
+                      ) : (
+                        <span className="badge badge-error">{t('admin.backup.statusFail')}</span>
+                      )}
+                    </td>
+                    <td>{record.fail_reason ? t(`admin.backup.failReasons.${record.fail_reason}`) : '—'}</td>
+                    <td className="num">{record.size_mb !== null ? `${record.size_mb} MB` : '—'}</td>
+                    <td>{record.kind === 'manual' ? t('admin.backup.kindManual') : t('admin.backup.kindAuto')}</td>
+                    <td>{t(`admin.backup.destinations.${record.destination}`)}</td>
+                  </tr>
+                ))}
             </tbody>
           </table>
         )}
@@ -755,468 +755,468 @@ export function BackupTab() {
 
       {/* ─── Restore Section ─────────────────────────────────────────────────────── */}
       {canEdit && (
-      <div className="detail-card glass">
-        <h2 style={{ marginTop: 0 }}>{t('admin.backup.restoreSection')}</h2>
-        <p className="modal-sub" style={{ margin: '0 0 var(--space-4)' }}>{t('admin.backup.restoreHint')}</p>
+        <div className="detail-card glass">
+          <h2 style={{ marginTop: 0 }}>{t('admin.backup.restoreSection')}</h2>
+          <p className="modal-sub" style={{ margin: '0 0 var(--space-4)' }}>{t('admin.backup.restoreHint')}</p>
 
-        {restoreNotice ? (
-          <p className="form-ok on" role="status">
-            <svg width={18} height={18} aria-hidden="true"><use href="#i-check-circle" /></svg>
-            <span>{t('admin.backup.restoringNotice')}</span>
-          </p>
-        ) : (
+          {restoreNotice ? (
+            <p className="form-ok on" role="status">
+              <svg width={18} height={18} aria-hidden="true"><use href="#i-check-circle" /></svg>
+              <span>{t('admin.backup.restoringNotice')}</span>
+            </p>
+          ) : (
           <>
-            {/* اختيار مصدر الاستعادة */}
-            <div className="form-field" style={{ marginBottom: 'var(--space-4)' }}>
-              <label style={{ display: 'block', marginBottom: 'var(--space-2)' }}>
-                {t('admin.backup.restoreSourceLabel')}
-              </label>
-              <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
-                <button
-                  type="button"
-                  className={`btn ${restoreSourceMode === 'history' ? 'btn-primary' : 'btn-secondary'} btn-sm`}
-                  onClick={() => setRestoreSourceMode('history')}
-                  style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}
-                >
-                  <svg width={16} height={16} aria-hidden="true"><use href="#i-clock" /></svg>
-                  <span>{t('admin.backup.restoreSourceHistory')}</span>
-                </button>
-                <button
-                  type="button"
-                  className={`btn ${restoreSourceMode === 'custom_path' ? 'btn-primary' : 'btn-secondary'} btn-sm`}
-                  onClick={() => setRestoreSourceMode('custom_path')}
-                  style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}
-                >
-                  <svg width={16} height={16} aria-hidden="true"><use href="#i-folder" /></svg>
-                  <span>{t('admin.backup.restoreSourceCustom')}</span>
-                </button>
-                <button
-                  type="button"
-                  className={`btn ${restoreSourceMode === 'google_drive' ? 'btn-primary' : 'btn-secondary'} btn-sm`}
-                  onClick={() => setRestoreSourceMode('google_drive')}
-                  style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}
-                >
-                  <svg width={16} height={16} aria-hidden="true"><use href="#i-cloud" /></svg>
-                  <span>{t('admin.backup.restoreSourceGoogleDrive')}</span>
-                </button>
-              </div>
-            </div>
-
-            {/* الحقول بحسب المصدر المختار */}
-            {restoreSourceMode === 'google_drive' ? (
-              <div style={{ marginBottom: 'var(--space-4)' }}>
-                {/* حالة التحميل */}
-                {driveFilesQuery.isLoading && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-4)', color: 'var(--color-text-secondary)' }}>
-                    <svg className="spinner" width={18} height={18} aria-hidden="true" style={{ animation: 'spin 1s linear infinite' }}><use href="#i-loader" /></svg>
-                    <span>{t('admin.backup.driveFilesLoading')}</span>
-                  </div>
-                )}
-
-                {/* خطأ في جلب الملفات */}
-                {driveFilesError && (
-                  <div className="form-error on" role="alert" style={{ marginBottom: 'var(--space-3)' }}>
-                    <svg width={18} height={18} aria-hidden="true"><use href="#i-alert-circle" /></svg>
-                    <span>{driveFilesError}</span>
-                  </div>
-                )}
-
-                {/* لا توجد ملفات */}
-                {!driveFilesQuery.isLoading && !driveFilesError && driveFiles.length === 0 && (
-                  <div style={{
-                    padding: 'var(--space-4)',
-                    background: 'var(--color-bg-secondary, rgba(0,0,0,0.03))',
-                    borderRadius: 'var(--radius-md, 8px)',
-                    border: '1px solid var(--color-border)',
-                    textAlign: 'center',
-                    color: 'var(--color-text-secondary)',
-                  }}>
-                    <svg width={24} height={24} aria-hidden="true" style={{ marginBottom: 'var(--space-2)', opacity: 0.5 }}><use href="#i-cloud" /></svg>
-                    <p style={{ margin: 0, fontSize: 'var(--text-sm)' }}>{t('admin.backup.driveFilesEmpty')}</p>
-                  </div>
-                )}
-
-                {/* قائمة الملفات */}
-                {driveFiles.length > 0 && (
-                  <div>
-                    <label style={{ display: 'block', marginBottom: 'var(--space-2)', fontSize: 'var(--text-sm)', fontWeight: 500 }}>
-                      {t('admin.backup.driveFilesSelectLabel')}
-                    </label>
-                    <div style={{
-                      maxHeight: 220,
-                      overflow: 'auto',
-                      border: '1px solid var(--color-border)',
-                      borderRadius: 'var(--radius-md, 8px)',
-                    }}>
-                      {driveFiles.map((f) => {
-                        const isSelected = driveFileId === f.id;
-                        const sizeKb = (f.size / 1024).toFixed(1);
-                        const sizeMb = (f.size / (1024 * 1024)).toFixed(2);
-                        const sizeStr = f.size >= 1024 * 1024 ? `${sizeMb} MB` : `${sizeKb} KB`;
-                        const dateStr = f.created ? new Date(f.created).toLocaleString('ar-EG', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
-
-                        return (
-                          <button
-                            key={f.id}
-                            type="button"
-                            onClick={() => setDriveFileId(isSelected ? '' : f.id)}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 'var(--space-3)',
-                              width: '100%',
-                              padding: 'var(--space-3) var(--space-4)',
-                              background: isSelected ? 'var(--color-primary-light, rgba(16, 185, 129, 0.08))' : 'transparent',
-                              border: 'none',
-                              borderBottom: '1px solid var(--color-border)',
-                              cursor: 'pointer',
-                              textAlign: 'start',
-                              transition: 'background 0.15s',
-                              color: 'inherit',
-                              font: 'inherit',
-                            }}
-                          >
-                            <div style={{
-                              width: 22, height: 22, borderRadius: '50%',
-                              border: `2px solid ${isSelected ? 'var(--color-primary)' : 'var(--color-border)'}`,
-                              background: isSelected ? 'var(--color-primary)' : 'transparent',
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              flexShrink: 0, transition: 'all 0.15s',
-                            }}>
-                              {isSelected && (
-                                <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
-                                  <polyline points="20 6 9 17 4 12" />
-                                </svg>
-                              )}
-                            </div>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{
-                                fontSize: 'var(--text-sm)', fontWeight: 500, direction: 'ltr', textAlign: 'start',
-                                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                              }}>
-                                {f.name}
-                              </div>
-                              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)', marginTop: 2 }}>
-                                {dateStr} — {sizeStr}
-                              </div>
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                    <p style={{ margin: 'var(--space-2) 0 0', fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>
-                      {driveFileId ? t('admin.backup.driveFileSelected') : t('admin.backup.driveFileSelectHint')}
-                    </p>
-                  </div>
-                )}
-
-                {/* كلمة سر فك التشفير */}
-                <div className="form-field" style={{ maxWidth: 450, marginTop: 'var(--space-3)' }}>
-                  <label htmlFor="bk-restore-drive-password">{t('admin.backup.restorePasswordLabel')}</label>
-                  <div className="input-wrap">
-                    <svg width={18} height={18} aria-hidden="true"><use href="#i-lock" /></svg>
-                    <input
-                      id="bk-restore-drive-password"
-                      type={showRestorePassword ? 'text' : 'password'}
-                      placeholder={t('admin.backup.restorePasswordPlaceholder')}
-                      value={restorePassword}
-                      onChange={(e) => setRestorePassword(e.target.value)}
-                      dir="ltr"
-                      autoComplete="new-password"
-                    />
-                    <button
-                      type="button"
-                      className="input-action"
-                      aria-label={showRestorePassword ? 'إخفاء' : 'إظهار'}
-                      onClick={() => setShowRestorePassword((v) => !v)}
-                      style={{ position: 'absolute', insetInlineEnd: 'var(--space-3)', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-secondary)' }}
-                    >
-                      <svg width={16} height={16} aria-hidden="true"><use href={showRestorePassword ? '#i-eye-off' : '#i-eye'} /></svg>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ) : restoreSourceMode === 'history' ? (
-              <div className="form-grid">
-                <div className="form-field">
-                  <label htmlFor="bk-restore-select">{t('admin.backup.restoreSelectLabel')}</label>
-                  <div className="input-wrap no-icon">
-                    <select id="bk-restore-select" value={restoreBackupId} onChange={(e) => setRestoreBackupId(e.target.value)}>
-                      <option value="">{t('admin.backup.restoreLatestOk')}</option>
-                      {okBackups.map((b) => (
-                        <option key={b.id} value={b.id}>
-                          {b.date} {b.time} — {t(`admin.backup.destinations.${b.destination}`)}
-                        </option>
-                      ))}
-                    </select>
-                    <span className="chev"><svg width={16} height={16} aria-hidden="true"><use href="#i-chevron-down" /></svg></span>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div style={{ marginBottom: 'var(--space-4)' }}>
-                <div className="form-field">
-                  <label htmlFor="bk-custom-path-input" style={{ display: 'block', marginBottom: 'var(--space-2)' }}>
-                    {t('admin.backup.customFileOrFolderLabel')}
-                  </label>
-
-                  {/* حقل ملف مخفي للاستدعاء */}
-                  <input
-                    ref={restoreFileInputRef}
-                    type="file"
-                    accept=".encrypted,.db,.json,*"
-                    style={{ display: 'none' }}
-                    onChange={handleRestoreFileInputChange}
-                  />
-
-                  <div className="input-wrap" style={{ position: 'relative' }}>
-                    <svg width={18} height={18} aria-hidden="true"><use href="#i-file-text" /></svg>
-                    <input
-                      id="bk-custom-path-input"
-                      type="text"
-                      placeholder="مسار الملف على جهازك (مثال: D:\backups\clinixa.db.encrypted)"
-                      value={restoreCustomPath}
-                      onChange={(e) => setRestoreCustomPath(e.target.value)}
-                      dir="ltr"
-                      style={{ paddingInlineEnd: 155 }}
-                    />
-                    <div
-                      style={{
-                        position: 'absolute',
-                        insetInlineEnd: 6,
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                        display: 'flex',
-                        gap: 4,
-                      }}
-                    >
-                      {restoreCustomPath && (
-                        <button
-                          type="button"
-                          className="btn btn-ghost btn-sm"
-                          onClick={() => setRestoreCustomPath('')}
-                          title={t('common.cancel')}
-                          style={{ padding: '2px 6px' }}
-                        >
-                          <svg width={14} height={14} aria-hidden="true"><use href="#i-x" /></svg>
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        id="bk-browse-restore-file-btn"
-                        className="btn btn-secondary btn-sm"
-                        onClick={handleBrowseRestoreFile}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 6,
-                          padding: '4px 12px',
-                          fontSize: 'var(--text-xs)',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        <svg width={14} height={14} aria-hidden="true"><use href="#i-folder" /></svg>
-                        <span>{t('admin.backup.chooseRestoreFile')}</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* كلمة سر فك التشفير الاختيارية */}
-                <div className="form-field" style={{ maxWidth: 450, marginTop: 'var(--space-3)' }}>
-                  <label htmlFor="bk-restore-password">{t('admin.backup.restorePasswordLabel')}</label>
-                  <div className="input-wrap">
-                    <svg width={18} height={18} aria-hidden="true"><use href="#i-lock" /></svg>
-                    <input
-                      id="bk-restore-password"
-                      type={showRestorePassword ? 'text' : 'password'}
-                      placeholder={t('admin.backup.restorePasswordPlaceholder')}
-                      value={restorePassword}
-                      onChange={(e) => setRestorePassword(e.target.value)}
-                      dir="ltr"
-                      autoComplete="new-password"
-                    />
-                    <button
-                      type="button"
-                      className="input-action"
-                      aria-label={showRestorePassword ? 'إخفاء' : 'إظهار'}
-                      onClick={() => setShowRestorePassword((v) => !v)}
-                      style={{ position: 'absolute', insetInlineEnd: 'var(--space-3)', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-secondary)' }}
-                    >
-                      <svg width={16} height={16} aria-hidden="true"><use href={showRestorePassword ? '#i-eye-off' : '#i-eye'} /></svg>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* حقل تأكيد الاستعادة */}
-            <div className="form-grid" style={{ marginTop: 'var(--space-3)' }}>
-              <div className="form-field" style={{ maxWidth: 450 }}>
-                <label htmlFor="bk-confirm">{t('admin.backup.confirmLabel')}</label>
-                <div className="input-wrap no-icon">
-                  <input
-                    id="bk-confirm"
-                    type="text"
-                    placeholder={t('admin.backup.confirmPlaceholder')}
-                    value={confirmText}
-                    onChange={(e) => setConfirmText(e.target.value)}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className={`form-error${restoreError ? ' on' : ''}`} role="alert">
-              <svg width={18} height={18} aria-hidden="true"><use href="#i-alert-circle" /></svg>
-              <span>{restoreError}</span>
-            </div>
-
-            <div style={{ marginTop: 'var(--space-4)' }}>
-              <button
-                type="button"
-                className={`btn btn-primary btn-inline${restoreMutation.isPending ? ' loading' : ''}`}
-                disabled={
-                  confirmText.trim().length === 0 ||
-                  (restoreSourceMode === 'custom_path' && !restoreCustomPath.trim()) ||
-                  restoreMutation.isPending
-                }
-                style={{ background: 'var(--color-status-error-text)' }}
-                onClick={() => restoreMutation.mutate()}
-              >
-                <svg className="spinner" width={18} height={18} aria-hidden="true"><use href="#i-loader" /></svg>
-                <span>{t('admin.backup.restoreSubmit')}</span>
-              </button>
-            </div>
-          </>
-        )}
-      </div>
-      )}
-
-      {/* ─── Toast ───────────────────────────────────────────────────────────────── */}
-      <div className={`ok-toast${toast ? ' on' : ''}`} role="status">
-        <svg width={18} height={18} aria-hidden="true"><use href="#i-check-circle" /></svg>
-        <span>{toast}</span>
-      </div>
-
-      {/* ─── Delete Confirm Modal ─────────────────────────────────────────────────── */}
-      {showDeleteConfirm && (
-        <div
-          className="modal-overlay open"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="gd-delete-confirm-title"
-          onClick={(e) => { if (e.target === e.currentTarget) setShowDeleteConfirm(false); }}
-        >
-          <div className="modal" style={{ maxWidth: 420 }}>
-            <div className="modal-head">
-              <h2 id="gd-delete-confirm-title" className="modal-title">
-                <svg width={20} height={20} aria-hidden="true" style={{ color: 'var(--color-status-error-text)' }}>
-                  <use href="#i-alert-circle" />
-                </svg>
-                {t('admin.backup.googleDrive.deleteConfirmTitle')}
-              </h2>
-              <button
-                type="button"
-                className="modal-close"
-                aria-label="إغلاق"
-                onClick={() => setShowDeleteConfirm(false)}
-              >
-                <svg width={20} height={20} aria-hidden="true"><use href="#i-x" /></svg>
-              </button>
-            </div>
-            <p className="modal-sub">{t('admin.backup.googleDrive.deleteConfirmMsg')}</p>
-            <div className="modal-actions">
-              <button
-                type="button"
-                className="btn btn-secondary btn-inline"
-                onClick={() => setShowDeleteConfirm(false)}
-              >
-                {t('common.cancel')}
-              </button>
-              <button
-                type="button"
-                id="gd-delete-confirm-btn"
-                className={`btn btn-primary btn-inline${deleteDriveMutation.isPending ? ' loading' : ''}`}
-                style={{ background: 'var(--color-status-error-text)' }}
-                disabled={deleteDriveMutation.isPending}
-                onClick={() => deleteDriveMutation.mutate()}
-              >
-                <svg className="spinner" width={18} height={18} aria-hidden="true"><use href="#i-loader" /></svg>
-                <span>{t('admin.backup.googleDrive.deleteConfirmBtn')}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ─── Google Drive Setup Guide Modal ────────────────────────────────────── */}
-      {showDriveGuide && (
-        <div
-          className="modal-overlay open"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="gd-guide-title"
-          onClick={(e) => { if (e.target === e.currentTarget) setShowDriveGuide(false); }}
-        >
-          <div className="modal" style={{ maxWidth: 620, maxHeight: '85vh', overflow: 'auto' }}>
-            <div className="modal-head">
-              <h2 id="gd-guide-title" className="modal-title">
-                <svg width={20} height={20} aria-hidden="true" style={{ color: '#4285F4' }}>
-                  <use href="#i-help" />
-                </svg>
-                {t('admin.backup.googleDrive.guideTitle')}
-              </h2>
-              <button
-                type="button"
-                className="modal-close"
-                aria-label="إغلاق"
-                onClick={() => setShowDriveGuide(false)}
-              >
-                <svg width={20} height={20} aria-hidden="true"><use href="#i-x" /></svg>
-              </button>
-            </div>
-
-            <div style={{ padding: 'var(--space-4) var(--space-5) var(--space-5)', lineHeight: 1.8 }}>
-              {/* الخطوة 1 */}
-              <div style={{ marginBottom: 'var(--space-5)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-2)' }}>
-                  <span style={{
-                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                    width: 28, height: 28, borderRadius: '50%',
-                    background: 'var(--color-primary)', color: '#fff',
-                    fontSize: 'var(--text-sm)', fontWeight: 700, flexShrink: 0,
-                  }}>1</span>
-                  <h3 style={{ margin: 0, fontSize: 'var(--text-base)' }}>{t('admin.backup.googleDrive.guideStep1Title')}</h3>
-                </div>
-                <p style={{ margin: 0, color: 'var(--color-text-secondary)', fontSize: 'var(--text-sm)', paddingInlineStart: 40 }}>
-                  {t('admin.backup.googleDrive.guideStep1Desc')}
-                </p>
-              </div>
-
-              {/* الخطوة 2 */}
-              <div style={{ marginBottom: 'var(--space-5)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-2)' }}>
-                  <span style={{
-                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                    width: 28, height: 28, borderRadius: '50%',
-                    background: 'var(--color-primary)', color: '#fff',
-                    fontSize: 'var(--text-sm)', fontWeight: 700, flexShrink: 0,
-                  }}>2</span>
-                  <h3 style={{ margin: 0, fontSize: 'var(--text-base)' }}>{t('admin.backup.googleDrive.guideStep2Title')}</h3>
-                </div>
-                <p style={{ margin: 0, color: 'var(--color-text-secondary)', fontSize: 'var(--text-sm)', paddingInlineStart: 40 }}>
-                  {t('admin.backup.googleDrive.guideStep2Desc')}
-                </p>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginInlineStart: 40, marginTop: 'var(--space-2)', marginBottom: 'var(--space-2)' }}>
-                  <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)', fontWeight: 500 }}>
-                    كود Google Apps Script المحدث (يدعم النسخ والاسترجاع):
-                  </span>
+              {/* اختيار مصدر الاستعادة */}
+              <div className="form-field" style={{ marginBottom: 'var(--space-4)' }}>
+                <label style={{ display: 'block', marginBottom: 'var(--space-2)' }}>
+                  {t('admin.backup.restoreSourceLabel')}
+                </label>
+                <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
                   <button
                     type="button"
-                    id="gd-copy-script-code-btn"
-                    className={`btn btn-sm ${codeCopied ? 'btn-primary' : 'btn-secondary'}`}
-                    onClick={() => {
-                      const codeToCopy = `var SECRET = "YOUR_SECRET_KEY_HERE";
+                    className={`btn ${restoreSourceMode === 'history' ? 'btn-primary' : 'btn-secondary'} btn-sm`}
+                    onClick={() => setRestoreSourceMode('history')}
+                    style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}
+                  >
+                    <svg width={16} height={16} aria-hidden="true"><use href="#i-clock" /></svg>
+                    <span>{t('admin.backup.restoreSourceHistory')}</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn ${restoreSourceMode === 'custom_path' ? 'btn-primary' : 'btn-secondary'} btn-sm`}
+                    onClick={() => setRestoreSourceMode('custom_path')}
+                    style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}
+                  >
+                    <svg width={16} height={16} aria-hidden="true"><use href="#i-folder" /></svg>
+                    <span>{t('admin.backup.restoreSourceCustom')}</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn ${restoreSourceMode === 'google_drive' ? 'btn-primary' : 'btn-secondary'} btn-sm`}
+                    onClick={() => setRestoreSourceMode('google_drive')}
+                    style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}
+                  >
+                    <svg width={16} height={16} aria-hidden="true"><use href="#i-cloud" /></svg>
+                    <span>{t('admin.backup.restoreSourceGoogleDrive')}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* الحقول بحسب المصدر المختار */}
+              {restoreSourceMode === 'google_drive' ? (
+                <div style={{ marginBottom: 'var(--space-4)' }}>
+                  {/* حالة التحميل */}
+                  {driveFilesQuery.isLoading && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-4)', color: 'var(--color-text-secondary)' }}>
+                      <svg className="spinner" width={18} height={18} aria-hidden="true" style={{ animation: 'spin 1s linear infinite' }}><use href="#i-loader" /></svg>
+                      <span>{t('admin.backup.driveFilesLoading')}</span>
+                    </div>
+                  )}
+
+                  {/* خطأ في جلب الملفات */}
+                  {driveFilesError && (
+                    <div className="form-error on" role="alert" style={{ marginBottom: 'var(--space-3)' }}>
+                      <svg width={18} height={18} aria-hidden="true"><use href="#i-alert-circle" /></svg>
+                      <span>{driveFilesError}</span>
+                    </div>
+                  )}
+
+                  {/* لا توجد ملفات */}
+                  {!driveFilesQuery.isLoading && !driveFilesError && driveFiles.length === 0 && (
+                    <div style={{
+                      padding: 'var(--space-4)',
+                      background: 'var(--color-bg-secondary, rgba(0,0,0,0.03))',
+                      borderRadius: 'var(--radius-md, 8px)',
+                      border: '1px solid var(--color-border)',
+                      textAlign: 'center',
+                      color: 'var(--color-text-secondary)',
+                    }}>
+                      <svg width={24} height={24} aria-hidden="true" style={{ marginBottom: 'var(--space-2)', opacity: 0.5 }}><use href="#i-cloud" /></svg>
+                      <p style={{ margin: 0, fontSize: 'var(--text-sm)' }}>{t('admin.backup.driveFilesEmpty')}</p>
+                    </div>
+                  )}
+
+                  {/* قائمة الملفات */}
+                  {driveFiles.length > 0 && (
+                    <div>
+                      <label style={{ display: 'block', marginBottom: 'var(--space-2)', fontSize: 'var(--text-sm)', fontWeight: 500 }}>
+                        {t('admin.backup.driveFilesSelectLabel')}
+                      </label>
+                      <div style={{
+                        maxHeight: 220,
+                        overflow: 'auto',
+                        border: '1px solid var(--color-border)',
+                        borderRadius: 'var(--radius-md, 8px)',
+                      }}>
+                        {driveFiles.map((f) => {
+                          const isSelected = driveFileId === f.id;
+                          const sizeKb = (f.size / 1024).toFixed(1);
+                          const sizeMb = (f.size / (1024 * 1024)).toFixed(2);
+                          const sizeStr = f.size >= 1024 * 1024 ? `${sizeMb} MB` : `${sizeKb} KB`;
+                          const dateStr = f.created ? new Date(f.created).toLocaleString('ar-EG', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+
+                          return (
+                            <button
+                              key={f.id}
+                              type="button"
+                              onClick={() => setDriveFileId(isSelected ? '' : f.id)}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 'var(--space-3)',
+                                width: '100%',
+                                padding: 'var(--space-3) var(--space-4)',
+                                background: isSelected ? 'var(--color-primary-light, rgba(16, 185, 129, 0.08))' : 'transparent',
+                                border: 'none',
+                                borderBottom: '1px solid var(--color-border)',
+                                cursor: 'pointer',
+                                textAlign: 'start',
+                                transition: 'background 0.15s',
+                                color: 'inherit',
+                                font: 'inherit',
+                              }}
+                            >
+                              <div style={{
+                                width: 22, height: 22, borderRadius: '50%',
+                                border: `2px solid ${isSelected ? 'var(--color-primary)' : 'var(--color-border)'}`,
+                                background: isSelected ? 'var(--color-primary)' : 'transparent',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                flexShrink: 0, transition: 'all 0.15s',
+                              }}>
+                                {isSelected && (
+                                  <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+                                    <polyline points="20 6 9 17 4 12" />
+                                  </svg>
+                                )}
+                              </div>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{
+                                  fontSize: 'var(--text-sm)', fontWeight: 500, direction: 'ltr', textAlign: 'start',
+                                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                                }}>
+                                  {f.name}
+                                </div>
+                                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)', marginTop: 2 }}>
+                                  {dateStr} — {sizeStr}
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <p style={{ margin: 'var(--space-2) 0 0', fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>
+                        {driveFileId ? t('admin.backup.driveFileSelected') : t('admin.backup.driveFileSelectHint')}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* كلمة سر فك التشفير */}
+                  <div className="form-field" style={{ maxWidth: 450, marginTop: 'var(--space-3)' }}>
+                    <label htmlFor="bk-restore-drive-password">{t('admin.backup.restorePasswordLabel')}</label>
+                    <div className="input-wrap">
+                      <svg width={18} height={18} aria-hidden="true"><use href="#i-lock" /></svg>
+                      <input
+                        id="bk-restore-drive-password"
+                        type={showRestorePassword ? 'text' : 'password'}
+                        placeholder={t('admin.backup.restorePasswordPlaceholder')}
+                        value={restorePassword}
+                        onChange={(e) => setRestorePassword(e.target.value)}
+                        dir="ltr"
+                        autoComplete="new-password"
+                      />
+                      <button
+                        type="button"
+                        className="input-action"
+                        aria-label={showRestorePassword ? 'إخفاء' : 'إظهار'}
+                        onClick={() => setShowRestorePassword((v) => !v)}
+                        style={{ position: 'absolute', insetInlineEnd: 'var(--space-3)', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-secondary)' }}
+                      >
+                        <svg width={16} height={16} aria-hidden="true"><use href={showRestorePassword ? '#i-eye-off' : '#i-eye'} /></svg>
+                      </button>
+                          </div>
+                        </div>
+                      </div>
+                      ) : restoreSourceMode === 'history' ? (
+                      <div className="form-grid">
+                        <div className="form-field">
+                          <label htmlFor="bk-restore-select">{t('admin.backup.restoreSelectLabel')}</label>
+                          <div className="input-wrap no-icon">
+                            <select id="bk-restore-select" value={restoreBackupId} onChange={(e) => setRestoreBackupId(e.target.value)}>
+                              <option value="">{t('admin.backup.restoreLatestOk')}</option>
+                              {okBackups.map((b) => (
+                                <option key={b.id} value={b.id}>
+                                  {b.date} {b.time} — {t(`admin.backup.destinations.${b.destination}`)}
+                                </option>
+                              ))}
+                            </select>
+                            <span className="chev"><svg width={16} height={16} aria-hidden="true"><use href="#i-chevron-down" /></svg></span>
+                          </div>
+                        </div>
+                      </div>
+                      ) : (
+                      <div style={{ marginBottom: 'var(--space-4)' }}>
+                        <div className="form-field">
+                          <label htmlFor="bk-custom-path-input" style={{ display: 'block', marginBottom: 'var(--space-2)' }}>
+                            {t('admin.backup.customFileOrFolderLabel')}
+                          </label>
+
+                          {/* حقل ملف مخفي للاستدعاء */}
+                          <input
+                            ref={restoreFileInputRef}
+                            type="file"
+                            accept=".encrypted,.db,.json,*"
+                            style={{ display: 'none' }}
+                            onChange={handleRestoreFileInputChange}
+                          />
+
+                          <div className="input-wrap" style={{ position: 'relative' }}>
+                            <svg width={18} height={18} aria-hidden="true"><use href="#i-file-text" /></svg>
+                            <input
+                              id="bk-custom-path-input"
+                              type="text"
+                              placeholder="مسار الملف على جهازك (مثال: D:\backups\clinixa.db.encrypted)"
+                              value={restoreCustomPath}
+                              onChange={(e) => setRestoreCustomPath(e.target.value)}
+                              dir="ltr"
+                              style={{ paddingInlineEnd: 155 }}
+                            />
+                            <div
+                              style={{
+                                position: 'absolute',
+                                insetInlineEnd: 6,
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                display: 'flex',
+                                gap: 4,
+                              }}
+                            >
+                              {restoreCustomPath && (
+                                <button
+                                  type="button"
+                                  className="btn btn-ghost btn-sm"
+                                  onClick={() => setRestoreCustomPath('')}
+                                  title={t('common.cancel')}
+                                  style={{ padding: '2px 6px' }}
+                                >
+                                  <svg width={14} height={14} aria-hidden="true"><use href="#i-x" /></svg>
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                id="bk-browse-restore-file-btn"
+                                className="btn btn-secondary btn-sm"
+                                onClick={handleBrowseRestoreFile}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 6,
+                                  padding: '4px 12px',
+                                  fontSize: 'var(--text-xs)',
+                                  whiteSpace: 'nowrap',
+                                }}
+                              >
+                                <svg width={14} height={14} aria-hidden="true"><use href="#i-folder" /></svg>
+                                <span>{t('admin.backup.chooseRestoreFile')}</span>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* كلمة سر فك التشفير الاختيارية */}
+                        <div className="form-field" style={{ maxWidth: 450, marginTop: 'var(--space-3)' }}>
+                          <label htmlFor="bk-restore-password">{t('admin.backup.restorePasswordLabel')}</label>
+                          <div className="input-wrap">
+                            <svg width={18} height={18} aria-hidden="true"><use href="#i-lock" /></svg>
+                            <input
+                              id="bk-restore-password"
+                              type={showRestorePassword ? 'text' : 'password'}
+                              placeholder={t('admin.backup.restorePasswordPlaceholder')}
+                              value={restorePassword}
+                              onChange={(e) => setRestorePassword(e.target.value)}
+                              dir="ltr"
+                              autoComplete="new-password"
+                            />
+                            <button
+                              type="button"
+                              className="input-action"
+                              aria-label={showRestorePassword ? 'إخفاء' : 'إظهار'}
+                              onClick={() => setShowRestorePassword((v) => !v)}
+                              style={{ position: 'absolute', insetInlineEnd: 'var(--space-3)', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-secondary)' }}
+                            >
+                              <svg width={16} height={16} aria-hidden="true"><use href={showRestorePassword ? '#i-eye-off' : '#i-eye'} /></svg>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+            )}
+
+                      {/* حقل تأكيد الاستعادة */}
+                      <div className="form-grid" style={{ marginTop: 'var(--space-3)' }}>
+                        <div className="form-field" style={{ maxWidth: 450 }}>
+                          <label htmlFor="bk-confirm">{t('admin.backup.confirmLabel')}</label>
+                          <div className="input-wrap no-icon">
+                            <input
+                              id="bk-confirm"
+                              type="text"
+                              placeholder={t('admin.backup.confirmPlaceholder')}
+                              value={confirmText}
+                              onChange={(e) => setConfirmText(e.target.value)}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className={`form-error${restoreError ? ' on' : ''}`} role="alert">
+                        <svg width={18} height={18} aria-hidden="true"><use href="#i-alert-circle" /></svg>
+                        <span>{restoreError}</span>
+                      </div>
+
+                      <div style={{ marginTop: 'var(--space-4)' }}>
+                        <button
+                          type="button"
+                          className={`btn btn-primary btn-inline${restoreMutation.isPending ? ' loading' : ''}`}
+                          disabled={
+                            confirmText.trim().length === 0 ||
+                            (restoreSourceMode === 'custom_path' && !restoreCustomPath.trim()) ||
+                            restoreMutation.isPending
+                          }
+                          style={{ background: 'var(--color-status-error-text)' }}
+                          onClick={() => restoreMutation.mutate()}
+                        >
+                          <svg className="spinner" width={18} height={18} aria-hidden="true"><use href="#i-loader" /></svg>
+                          <span>{t('admin.backup.restoreSubmit')}</span>
+                        </button>
+                      </div>
+                    </>
+        )}
+                  </div>
+      )}
+
+                  {/* ─── Toast ───────────────────────────────────────────────────────────────── */}
+                  <div className={`ok-toast${toast ? ' on' : ''}`} role="status">
+                    <svg width={18} height={18} aria-hidden="true"><use href="#i-check-circle" /></svg>
+                    <span>{toast}</span>
+                  </div>
+
+                  {/* ─── Delete Confirm Modal ─────────────────────────────────────────────────── */}
+                  {showDeleteConfirm && (
+                    <div
+                      className="modal-overlay open"
+                      role="dialog"
+                      aria-modal="true"
+                      aria-labelledby="gd-delete-confirm-title"
+                      onClick={(e) => { if (e.target === e.currentTarget) setShowDeleteConfirm(false); }}
+                    >
+                      <div className="modal" style={{ maxWidth: 420 }}>
+                        <div className="modal-head">
+                          <h2 id="gd-delete-confirm-title" className="modal-title">
+                            <svg width={20} height={20} aria-hidden="true" style={{ color: 'var(--color-status-error-text)' }}>
+                              <use href="#i-alert-circle" />
+                            </svg>
+                            {t('admin.backup.googleDrive.deleteConfirmTitle')}
+                          </h2>
+                          <button
+                            type="button"
+                            className="modal-close"
+                            aria-label="إغلاق"
+                            onClick={() => setShowDeleteConfirm(false)}
+                          >
+                            <svg width={20} height={20} aria-hidden="true"><use href="#i-x" /></svg>
+                          </button>
+                        </div>
+                        <p className="modal-sub">{t('admin.backup.googleDrive.deleteConfirmMsg')}</p>
+                        <div className="modal-actions">
+                          <button
+                            type="button"
+                            className="btn btn-secondary btn-inline"
+                            onClick={() => setShowDeleteConfirm(false)}
+                          >
+                            {t('common.cancel')}
+                          </button>
+                          <button
+                            type="button"
+                            id="gd-delete-confirm-btn"
+                            className={`btn btn-primary btn-inline${deleteDriveMutation.isPending ? ' loading' : ''}`}
+                            style={{ background: 'var(--color-status-error-text)' }}
+                            disabled={deleteDriveMutation.isPending}
+                            onClick={() => deleteDriveMutation.mutate()}
+                          >
+                            <svg className="spinner" width={18} height={18} aria-hidden="true"><use href="#i-loader" /></svg>
+                            <span>{t('admin.backup.googleDrive.deleteConfirmBtn')}</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ─── Google Drive Setup Guide Modal ────────────────────────────────────── */}
+                  {showDriveGuide && (
+                    <div
+                      className="modal-overlay open"
+                      role="dialog"
+                      aria-modal="true"
+                      aria-labelledby="gd-guide-title"
+                      onClick={(e) => { if (e.target === e.currentTarget) setShowDriveGuide(false); }}
+                    >
+                      <div className="modal" style={{ maxWidth: 620, maxHeight: '85vh', overflow: 'auto' }}>
+                        <div className="modal-head">
+                          <h2 id="gd-guide-title" className="modal-title">
+                            <svg width={20} height={20} aria-hidden="true" style={{ color: '#4285F4' }}>
+                              <use href="#i-help" />
+                            </svg>
+                            {t('admin.backup.googleDrive.guideTitle')}
+                          </h2>
+                          <button
+                            type="button"
+                            className="modal-close"
+                            aria-label="إغلاق"
+                            onClick={() => setShowDriveGuide(false)}
+                          >
+                            <svg width={20} height={20} aria-hidden="true"><use href="#i-x" /></svg>
+                          </button>
+                        </div>
+
+                        <div style={{ padding: 'var(--space-4) var(--space-5) var(--space-5)', lineHeight: 1.8 }}>
+                          {/* الخطوة 1 */}
+                          <div style={{ marginBottom: 'var(--space-5)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-2)' }}>
+                              <span style={{
+                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                width: 28, height: 28, borderRadius: '50%',
+                                background: 'var(--color-primary)', color: '#fff',
+                                fontSize: 'var(--text-sm)', fontWeight: 700, flexShrink: 0,
+                              }}>1</span>
+                              <h3 style={{ margin: 0, fontSize: 'var(--text-base)' }}>{t('admin.backup.googleDrive.guideStep1Title')}</h3>
+                            </div>
+                            <p style={{ margin: 0, color: 'var(--color-text-secondary)', fontSize: 'var(--text-sm)', paddingInlineStart: 40 }}>
+                              {t('admin.backup.googleDrive.guideStep1Desc')}
+                            </p>
+                          </div>
+
+                          {/* الخطوة 2 */}
+                          <div style={{ marginBottom: 'var(--space-5)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-2)' }}>
+                              <span style={{
+                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                width: 28, height: 28, borderRadius: '50%',
+                                background: 'var(--color-primary)', color: '#fff',
+                                fontSize: 'var(--text-sm)', fontWeight: 700, flexShrink: 0,
+                              }}>2</span>
+                              <h3 style={{ margin: 0, fontSize: 'var(--text-base)' }}>{t('admin.backup.googleDrive.guideStep2Title')}</h3>
+                            </div>
+                            <p style={{ margin: 0, color: 'var(--color-text-secondary)', fontSize: 'var(--text-sm)', paddingInlineStart: 40 }}>
+                              {t('admin.backup.googleDrive.guideStep2Desc')}
+                            </p>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginInlineStart: 40, marginTop: 'var(--space-2)', marginBottom: 'var(--space-2)' }}>
+                              <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)', fontWeight: 500 }}>
+                                كود Google Apps Script المحدث (يدعم النسخ والاسترجاع):
+                              </span>
+                              <button
+                                type="button"
+                                id="gd-copy-script-code-btn"
+                                className={`btn btn-sm ${codeCopied ? 'btn-primary' : 'btn-secondary'}`}
+                                onClick={() => {
+                                  const codeToCopy = `var SECRET = "YOUR_SECRET_KEY_HERE";
 
 function doPost(e) {
   try {
@@ -1290,52 +1290,52 @@ function jsonResponse(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
 }`;
-                      navigator.clipboard.writeText(codeToCopy);
-                      setCodeCopied(true);
-                      setTimeout(() => setCodeCopied(false), 2500);
-                    }}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 6,
-                      padding: '4px 12px',
-                      fontSize: 'var(--text-xs)',
-                      borderRadius: 'var(--radius-sm, 6px)',
-                      transition: 'all 0.2s',
-                    }}
-                  >
-                    {codeCopied ? (
-                      <>
-                        <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                        <span>تم نسخ الكود بنجاح ✓</span>
-                      </>
-                    ) : (
-                      <>
-                        <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                        </svg>
-                        <span>نسخ الكود بالكامل</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-                <div
-                  dir="ltr"
-                  style={{
-                    marginInlineStart: 40,
-                    padding: 'var(--space-3) var(--space-4)',
-                    background: 'var(--color-bg-secondary, rgba(0,0,0,0.04))',
-                    borderRadius: 'var(--radius-md, 8px)',
-                    fontFamily: 'monospace', fontSize: 'var(--text-xs)',
-                    whiteSpace: 'pre-wrap', wordBreak: 'break-all',
-                    border: '1px solid var(--color-border)',
-                    maxHeight: 340, overflow: 'auto',
-                  }}
-                >
-{`var SECRET = "YOUR_SECRET_KEY_HERE";
+                                  navigator.clipboard.writeText(codeToCopy);
+                                  setCodeCopied(true);
+                                  setTimeout(() => setCodeCopied(false), 2500);
+                                }}
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 6,
+                                  padding: '4px 12px',
+                                  fontSize: 'var(--text-xs)',
+                                  borderRadius: 'var(--radius-sm, 6px)',
+                                  transition: 'all 0.2s',
+                                }}
+                              >
+                                {codeCopied ? (
+                                  <>
+                                    <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+                                      <polyline points="20 6 9 17 4 12" />
+                                    </svg>
+                                    <span>تم نسخ الكود بنجاح ✓</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                                    </svg>
+                                    <span>نسخ الكود بالكامل</span>
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                            <div
+                              dir="ltr"
+                              style={{
+                                marginInlineStart: 40,
+                                padding: 'var(--space-3) var(--space-4)',
+                                background: 'var(--color-bg-secondary, rgba(0,0,0,0.04))',
+                                borderRadius: 'var(--radius-md, 8px)',
+                                fontFamily: 'monospace', fontSize: 'var(--text-xs)',
+                                whiteSpace: 'pre-wrap', wordBreak: 'break-all',
+                                border: '1px solid var(--color-border)',
+                                maxHeight: 340, overflow: 'auto',
+                              }}
+                            >
+                              {`var SECRET = "YOUR_SECRET_KEY_HERE";
 
 function doPost(e) {
   try {
@@ -1409,87 +1409,87 @@ function jsonResponse(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
 }`}
-                </div>
-              </div>
+                            </div>
+                          </div>
 
-              {/* الخطوة 3 */}
-              <div style={{ marginBottom: 'var(--space-5)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-2)' }}>
-                  <span style={{
-                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                    width: 28, height: 28, borderRadius: '50%',
-                    background: 'var(--color-primary)', color: '#fff',
-                    fontSize: 'var(--text-sm)', fontWeight: 700, flexShrink: 0,
-                  }}>3</span>
-                  <h3 style={{ margin: 0, fontSize: 'var(--text-base)' }}>{t('admin.backup.googleDrive.guideStep3Title')}</h3>
-                </div>
-                <p style={{ margin: 0, color: 'var(--color-text-secondary)', fontSize: 'var(--text-sm)', paddingInlineStart: 40 }}>
-                  {t('admin.backup.googleDrive.guideStep3Desc')}
-                </p>
-              </div>
+                          {/* الخطوة 3 */}
+                          <div style={{ marginBottom: 'var(--space-5)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-2)' }}>
+                              <span style={{
+                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                width: 28, height: 28, borderRadius: '50%',
+                                background: 'var(--color-primary)', color: '#fff',
+                                fontSize: 'var(--text-sm)', fontWeight: 700, flexShrink: 0,
+                              }}>3</span>
+                              <h3 style={{ margin: 0, fontSize: 'var(--text-base)' }}>{t('admin.backup.googleDrive.guideStep3Title')}</h3>
+                            </div>
+                            <p style={{ margin: 0, color: 'var(--color-text-secondary)', fontSize: 'var(--text-sm)', paddingInlineStart: 40 }}>
+                              {t('admin.backup.googleDrive.guideStep3Desc')}
+                            </p>
+                          </div>
 
-              {/* الخطوة 4 */}
-              <div style={{ marginBottom: 'var(--space-5)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-2)' }}>
-                  <span style={{
-                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                    width: 28, height: 28, borderRadius: '50%',
-                    background: 'var(--color-primary)', color: '#fff',
-                    fontSize: 'var(--text-sm)', fontWeight: 700, flexShrink: 0,
-                  }}>4</span>
-                  <h3 style={{ margin: 0, fontSize: 'var(--text-base)' }}>{t('admin.backup.googleDrive.guideStep4Title')}</h3>
-                </div>
-                <p style={{ margin: 0, color: 'var(--color-text-secondary)', fontSize: 'var(--text-sm)', paddingInlineStart: 40 }}>
-                  {t('admin.backup.googleDrive.guideStep4Desc')}
-                </p>
-              </div>
+                          {/* الخطوة 4 */}
+                          <div style={{ marginBottom: 'var(--space-5)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-2)' }}>
+                              <span style={{
+                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                width: 28, height: 28, borderRadius: '50%',
+                                background: 'var(--color-primary)', color: '#fff',
+                                fontSize: 'var(--text-sm)', fontWeight: 700, flexShrink: 0,
+                              }}>4</span>
+                              <h3 style={{ margin: 0, fontSize: 'var(--text-base)' }}>{t('admin.backup.googleDrive.guideStep4Title')}</h3>
+                            </div>
+                            <p style={{ margin: 0, color: 'var(--color-text-secondary)', fontSize: 'var(--text-sm)', paddingInlineStart: 40 }}>
+                              {t('admin.backup.googleDrive.guideStep4Desc')}
+                            </p>
+                          </div>
 
-              {/* الخطوة 5 */}
-              <div style={{ marginBottom: 'var(--space-4)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-2)' }}>
-                  <span style={{
-                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                    width: 28, height: 28, borderRadius: '50%',
-                    background: 'var(--color-primary)', color: '#fff',
-                    fontSize: 'var(--text-sm)', fontWeight: 700, flexShrink: 0,
-                  }}>5</span>
-                  <h3 style={{ margin: 0, fontSize: 'var(--text-base)' }}>{t('admin.backup.googleDrive.guideStep5Title')}</h3>
-                </div>
-                <p style={{ margin: 0, color: 'var(--color-text-secondary)', fontSize: 'var(--text-sm)', paddingInlineStart: 40 }}>
-                  {t('admin.backup.googleDrive.guideStep5Desc')}
-                </p>
-              </div>
+                          {/* الخطوة 5 */}
+                          <div style={{ marginBottom: 'var(--space-4)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-2)' }}>
+                              <span style={{
+                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                width: 28, height: 28, borderRadius: '50%',
+                                background: 'var(--color-primary)', color: '#fff',
+                                fontSize: 'var(--text-sm)', fontWeight: 700, flexShrink: 0,
+                              }}>5</span>
+                              <h3 style={{ margin: 0, fontSize: 'var(--text-base)' }}>{t('admin.backup.googleDrive.guideStep5Title')}</h3>
+                            </div>
+                            <p style={{ margin: 0, color: 'var(--color-text-secondary)', fontSize: 'var(--text-sm)', paddingInlineStart: 40 }}>
+                              {t('admin.backup.googleDrive.guideStep5Desc')}
+                            </p>
+                          </div>
 
-              {/* ملاحظة */}
-              <div style={{
-                marginTop: 'var(--space-4)',
-                padding: 'var(--space-3) var(--space-4)',
-                background: 'rgba(59, 130, 246, 0.06)',
-                border: '1px solid rgba(59, 130, 246, 0.2)',
-                borderRadius: 'var(--radius-md, 8px)',
-                display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)',
-              }}>
-                <svg width={18} height={18} aria-hidden="true" style={{ color: '#3B82F6', flexShrink: 0, marginTop: 2 }}>
-                  <use href="#i-info" />
-                </svg>
-                <p style={{ margin: 0, fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)' }}>
-                  {t('admin.backup.googleDrive.guideNote')}
-                </p>
-              </div>
-            </div>
+                          {/* ملاحظة */}
+                          <div style={{
+                            marginTop: 'var(--space-4)',
+                            padding: 'var(--space-3) var(--space-4)',
+                            background: 'rgba(59, 130, 246, 0.06)',
+                            border: '1px solid rgba(59, 130, 246, 0.2)',
+                            borderRadius: 'var(--radius-md, 8px)',
+                            display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)',
+                          }}>
+                            <svg width={18} height={18} aria-hidden="true" style={{ color: '#3B82F6', flexShrink: 0, marginTop: 2 }}>
+                              <use href="#i-info" />
+                            </svg>
+                            <p style={{ margin: 0, fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)' }}>
+                              {t('admin.backup.googleDrive.guideNote')}
+                            </p>
+                          </div>
+                        </div>
 
-            <div className="modal-actions">
-              <button
-                type="button"
-                className="btn btn-primary btn-inline"
-                onClick={() => setShowDriveGuide(false)}
-              >
-                {t('admin.backup.googleDrive.guideCloseBtn')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
-  );
+                        <div className="modal-actions">
+                          <button
+                            type="button"
+                            className="btn btn-primary btn-inline"
+                            onClick={() => setShowDriveGuide(false)}
+                          >
+                            {t('admin.backup.googleDrive.guideCloseBtn')}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
+              );
 }

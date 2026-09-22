@@ -380,8 +380,8 @@ export async function runBackup(input: RunBackupInput): Promise<BackupRecord> {
       failReason === 'offline'
         ? 'لا يوجد اتصال بالإنترنت'
         : failReason === 'token'
-        ? 'انتهت صلاحية جلسة التخزين السحابي أو المفاتيح غير صالحة'
-        : 'تعذر الوصول لجهاز التخزين';
+          ? 'انتهت صلاحية جلسة التخزين السحابي أو المفاتيح غير صالحة'
+          : 'تعذر الوصول لجهاز التخزين';
 
     await query('system_alerts').insert({
       id: alertId,
@@ -804,15 +804,15 @@ export async function restoreBackup(
     const walPath = `${targetDbPath}-wal`;
     const shmPath = `${targetDbPath}-shm`;
     if (fs.existsSync(walPath)) {
-      try { fs.unlinkSync(walPath); } catch {}
+      try { fs.unlinkSync(walPath); } catch { }
     }
     if (fs.existsSync(shmPath)) {
-      try { fs.unlinkSync(shmPath); } catch {}
+      try { fs.unlinkSync(shmPath); } catch { }
     }
 
     // استبدال الملف الأساسي
     fs.copyFileSync(tempRestorePath, targetDbPath);
-    try { fs.unlinkSync(tempRestorePath); } catch {}
+    try { fs.unlinkSync(tempRestorePath); } catch { }
 
     // استعادة المرفقات إن وُجدت
     if (attachmentsDirPath && fs.existsSync(attachmentsDirPath)) {
@@ -823,7 +823,7 @@ export async function restoreBackup(
   } catch (restoreErr: any) {
     try {
       if (fs.existsSync(tempRestorePath)) fs.unlinkSync(tempRestorePath);
-    } catch {}
+    } catch { }
     throw new AppError(
       'INTERNAL_ERROR',
       `فشلت كتابة قاعدة البيانات المستعادة: ${restoreErr?.message || 'خطأ غير معروف'}`,
