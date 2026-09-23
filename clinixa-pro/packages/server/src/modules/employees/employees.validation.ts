@@ -19,7 +19,7 @@ export const createEmployeeSchema = z.object({
   role: z.enum(['doctor', 'nurse', 'secretary'], {
     message: 'الدور الوظيفي يجب أن يكون doctor أو nurse أو secretary',
   }),
-  branch_id: z.string().nullable().optional(),
+  branch_id: z.string().min(1, 'يجب اختيار الفرع المسؤول عنه الموظف'),
   permissions: z
     .array(
       z.string().refine((val) => isValidPermission(val), {
@@ -52,3 +52,9 @@ export const toggleActiveEmployeeSchema = z.object({
 });
 
 export type ToggleActiveEmployeeInput = z.infer<typeof toggleActiveEmployeeSchema>;
+
+export const updateBranchSchema = z.object({
+  branch_id: z.string().min(1, 'يجب اختيار فرع نشط'),
+});
+
+export type UpdateBranchInput = z.infer<typeof updateBranchSchema>;

@@ -10,12 +10,14 @@ import type {
   BackupKind,
   BackupDestination,
   GoogleDriveSettings,
+  BackupSchedule,
 } from '@clinixa/shared';
 import type {
   RunBackupInput,
   UpdateBackupDestinationInput,
   RestoreBackupInput,
   UpdateGoogleDriveSettingsInput,
+  UpdateBackupScheduleInput,
 } from './backup.validation';
 import {
   encryptBackupData,
@@ -76,6 +78,56 @@ export async function getGoogleDriveSettings(): Promise<GoogleDriveSettings> {
     is_enabled: Boolean(row.is_enabled),
     updated_at: row.updated_at ?? null,
   };
+}
+
+/**
+ * @description جلب جدولة النسخ المحلي وGoogle Drive
+ * @returns {Promise<{ schedules: BackupSchedule[] }>} إعدادات الجدولة
+ */
+export async function getBackupSchedules(): Promise<{ schedules: BackupSchedule[] }> {
+  const rows = await query('backup_schedules').orderBy('destination', 'asc');
+  return {
+    schedules: rows.map((row) => ({
+      destination: row.destination as BackupSchedule['destination'],
+      is_enabled: Boolean(row.is_enabled),
+      frequency: row.frequency as BackupSchedule['frequency'],
+      time: row.time,
+      day_of_week: row.day_of_week === null ? null : Number(row.day_of_week),
+      target_path: row.target_path ?? null,
+      has_backup_password: Boolean(row.backup_password && row.backup_password.trim().length > 0),
+      updated_at: row.updated_at ?? null,
+    })),
+  };
+}
+
+/**
+ * @description تحديث جدولة وجهة واحدة مع إبقاء كلمة السر مخفية في الاستجابة
+ * @param {UpdateBackupScheduleInput} input - إعدادات الجدولة الجديدة
+ * @returns {Promise<{ schedule: BackupSchedule; message: string }>} الجدولة المحدثة
+ */
+export async function updateBackupSchedule(
+  input: UpdateBackupScheduleInput
+): Promise<{ schedule: BackupSchedule; message: string }> {
+  const updateData: Record<string, unknown> = {
+    is_enabled: input.is_enabled ? 1 : 0,
+    frequency: input.frequency,
+    time: input.time,
+    day_of_week: input.frequency === 'weekly' ? input.day_of_week ?? null : null,
+    target_path: input.destination === 'local_device' ? input.target_path || null : null,
+    updated_at: query.raw("(datetime('now'))"),
+  };
+
+  if (input.backup_password !== undefined) {
+    updateData.backup_password = input.backup_password || null;
+  }
+
+  await query('backup_schedules').where({ destination: input.destination }).update(updateData);
+  const result = await getBackupSchedules();
+  const schedule = result.schedules.find((item) => item.destination === input.destination);
+  if (!schedule) {
+    throw new AppError('NOT_FOUND', 'إعداد جدولة النسخ غير موجود', 404);
+  }
+  return { schedule, message: 'تم حفظ جدولة النسخ الاحتياطي بنجاح' };
 }
 
 /**

@@ -40,6 +40,25 @@ export const updateGoogleDriveSettingsSchema = z.object({
 
 export type UpdateGoogleDriveSettingsInput = z.infer<typeof updateGoogleDriveSettingsSchema>;
 
+/** @description سكيمة التحقق لتحديث جدولة النسخ الاحتياطي لوجهة واحدة */
+export const updateBackupScheduleSchema = z
+  .object({
+    destination: z.enum(['local_device', 'google_drive']),
+    is_enabled: z.boolean(),
+    frequency: z.enum(['minutely', 'hourly', 'daily', 'weekly']),
+    time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'الوقت يجب أن يكون بصيغة HH:mm'),
+    day_of_week: z.number().int().min(0).max(6).nullable().optional(),
+    target_path: z.string().trim().nullable().optional(),
+    backup_password: z.string().trim().min(4, 'كلمة السر يجب أن تكون 4 أحرف على الأقل').nullable().optional(),
+  })
+  .superRefine((value, context) => {
+    if (value.frequency === 'weekly' && value.day_of_week == null) {
+      context.addIssue({ code: 'custom', path: ['day_of_week'], message: 'اختر يوم الأسبوع للجدولة الأسبوعية' });
+    }
+  });
+
+export type UpdateBackupScheduleInput = z.infer<typeof updateBackupScheduleSchema>;
+
 /**
  * @description سكيمة التحقق لطلب استعادة النسخة الاحتياطية
  */

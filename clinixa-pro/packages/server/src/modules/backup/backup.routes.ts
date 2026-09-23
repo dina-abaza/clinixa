@@ -10,6 +10,8 @@ import {
   updateGoogleDriveSettingsHandler,
   deleteGoogleDriveSettingsHandler,
   listGoogleDriveBackupsHandler,
+  listBackupSchedules,
+  saveBackupSchedule,
 } from './backup.controller';
 
 const router = Router();
@@ -19,6 +21,8 @@ router.use(authMiddleware);
 
 // مسارات إدارة النسخ الاحتياطي
 router.get('/history', requirePermission('admin.view'), listBackupHistory);
+router.get('/schedules', requirePermission('admin.view'), listBackupSchedules);
+router.put('/schedules', requirePermission('admin.edit'), saveBackupSchedule);
 router.post('/run', requirePermission('admin.edit'), triggerBackup);
 router.put('/destination', requirePermission('admin.edit'), setBackupDestination);
 router.post('/restore', requirePermission('admin.edit'), restoreBackupData);

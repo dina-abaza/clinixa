@@ -88,6 +88,50 @@ export interface GoogleDriveSettingsData {
   updated_at: string | null;
 }
 
+export interface BackupScheduleData {
+  destination: 'local_device' | 'google_drive';
+  is_enabled: boolean;
+  frequency: 'minutely' | 'hourly' | 'daily' | 'weekly';
+  time: string;
+  day_of_week: number | null;
+  target_path: string | null;
+  has_backup_password: boolean;
+  updated_at: string | null;
+}
+
+export interface UpdateBackupScheduleRequest {
+  destination: 'local_device' | 'google_drive';
+  is_enabled: boolean;
+  frequency: 'minutely' | 'hourly' | 'daily' | 'weekly';
+  time: string;
+  day_of_week?: number | null;
+  target_path?: string | null;
+  backup_password?: string | null;
+}
+
+export async function getBackupSchedules(): Promise<ApiResponse<{ schedules: BackupScheduleData[] }>> {
+  try {
+    const res = await apiClient.get<ApiResponse<{ schedules: BackupScheduleData[] }>>('/backup/schedules');
+    return res.data;
+  } catch (err) {
+    return extractApiError(err);
+  }
+}
+
+export async function updateBackupSchedule(
+  payload: UpdateBackupScheduleRequest,
+): Promise<ApiResponse<{ schedule: BackupScheduleData; message: string }>> {
+  try {
+    const res = await apiClient.put<ApiResponse<{ schedule: BackupScheduleData; message: string }>>(
+      '/backup/schedules',
+      payload,
+    );
+    return res.data;
+  } catch (err) {
+    return extractApiError(err);
+  }
+}
+
 export interface UpdateGoogleDriveSettingsRequest {
   script_url?: string | null;
   secret_key?: string | null;

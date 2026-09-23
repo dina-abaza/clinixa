@@ -1,6 +1,9 @@
+import dns from 'dns';
 import app from './app';
 import { env } from './config/env';
 import query from './db/sqlite/query';
+import { startBackupScheduler } from './modules/backup/backup.scheduler';
+import { startSyncEngine } from './modules/sync/sync.engine';
 
 async function normalizeMigrationRegistryForProduction(): Promise<void> {
   if (env.NODE_ENV !== 'production') {
@@ -21,11 +24,19 @@ async function normalizeMigrationRegistryForProduction(): Promise<void> {
 }
 
 async function startServer(): Promise<void> {
+  const dnsServers = env.MONGODB_DNS_SERVERS.split(',').map((server) => server.trim()).filter(Boolean);
+  if (dnsServers.length > 0) {
+    dns.setServers(dnsServers);
+    console.log(`🌐 DNS resolvers configured for external services: ${dnsServers.join(', ')}`);
+  }
+
   try {
     if (env.NODE_ENV !== 'test') {
       await normalizeMigrationRegistryForProduction();
       await query.migrate.latest();
       console.log('✅ SQLite migrations are up to date');
+      startBackupScheduler();
+      startSyncEngine();
     }
   } catch (migErr) {
     console.error('⚠️ Migrations execution failed or partially completed:', migErr);

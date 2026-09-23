@@ -29,7 +29,7 @@ export function AddEmployeeModal({ branches, onClose, onCreated }: Props) {
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [onClose]);
 
-  const canSubmit = nameAr.trim().length > 0 && username.trim().length >= 3;
+  const canSubmit = nameAr.trim().length > 0 && username.trim().length >= 3 && branchId.length > 0;
 
   async function handleSubmit() {
     if (!canSubmit) return;
@@ -39,7 +39,7 @@ export function AddEmployeeModal({ branches, onClose, onCreated }: Props) {
       name_ar: nameAr.trim(),
       username: username.trim(),
       role,
-      branch_id: branchId || null,
+      branch_id: branchId,
       permissions: [...selectedPermissions],
     });
     setIsSubmitting(false);
@@ -84,7 +84,7 @@ export function AddEmployeeModal({ branches, onClose, onCreated }: Props) {
             <label htmlFor="emp-branch">{t('admin.employees.fields.branch')}</label>
             <div className="input-wrap no-icon">
               <select id="emp-branch" value={branchId} onChange={(e) => setBranchId(e.target.value)}>
-                <option value="">{t('admin.employees.fields.branchNone')}</option>
+                <option value="">اختر الفرع المسؤول عنه الموظف</option>
                 {branches.map((b) => (
                   <option key={b.id} value={b.id}>{b.name_ar}</option>
                 ))}

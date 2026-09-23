@@ -85,3 +85,18 @@ export async function toggleEmployeeActive(
     return extractApiError(err);
   }
 }
+
+export async function updateEmployeeBranch(
+  id: string,
+  branchId: string,
+): Promise<ApiResponse<{ id: string; branch_id: string }>> {
+  try {
+    const res = await apiClient.patch<ApiResponse<{ id: string; branch_id: string }>>(
+      `/employees/${id}/branch`,
+      { branch_id: branchId },
+    );
+    return res.data;
+  } catch (err) {
+    return extractApiError(err);
+  }
+}

@@ -7,6 +7,7 @@ import type {
   CreateEmployeeInput,
   UpdatePermissionsInput,
   ToggleActiveEmployeeInput,
+  UpdateBranchInput,
 } from './employees.validation';
 
 /**
@@ -113,6 +114,11 @@ export async function createEmployee(
     throw new AppError('CONFLICT', 'اسم المستخدم مسجل بالفعل لموظف آخر', 409, 'username');
   }
 
+  const branch = await query('branches').where({ id: input.branch_id, is_active: 1 }).first();
+  if (!branch) {
+    throw new AppError('VALIDATION_ERROR', 'الفرع المحدد غير موجود أو غير نشط', 400, 'branch_id');
+  }
+
   const employeeId = `emp_${crypto.randomUUID()}`;
   const temporaryPassword = generateTemporaryPassword();
   const passwordHash = await bcrypt.hash(temporaryPassword, 10);
@@ -124,7 +130,7 @@ export async function createEmployee(
       username: input.username,
       password_hash: passwordHash,
       role: input.role,
-      branch_id: input.branch_id ?? null,
+      branch_id: input.branch_id,
       is_owner: 0,
       is_active: 1,
     });
@@ -187,6 +193,24 @@ export async function updateEmployeePermissions(
     id,
     permissions: input.permissions as Permission[],
   };
+}
+
+export async function updateEmployeeBranch(
+  id: string,
+  input: UpdateBranchInput
+): Promise<{ id: string; branch_id: string }> {
+  const employee = await query('employees').where({ id }).first();
+  if (!employee) throw new AppError('NOT_FOUND', 'الموظف غير موجود', 404);
+  if (employee.is_owner) throw new AppError('FORBIDDEN', 'حساب المالك لا يحتاج إلى ربط بفرع', 403);
+
+  const branch = await query('branches').where({ id: input.branch_id, is_active: 1 }).first();
+  if (!branch) throw new AppError('VALIDATION_ERROR', 'الفرع المحدد غير موجود أو غير نشط', 400, 'branch_id');
+
+  await query('employees').where({ id }).update({
+    branch_id: input.branch_id,
+    updated_at: query.raw("(datetime('now'))"),
+  });
+  return { id, branch_id: input.branch_id };
 }
 
 /**

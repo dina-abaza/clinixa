@@ -8,6 +8,7 @@ import * as dotenv from 'dotenv';
 import * as path from 'path';
 import * as fs from 'fs';
 import { z } from 'zod';
+import { resolveRuntimeSecret } from './runtime-secret';
 
 // لا تُحمّل .env في production؛ لأن Electron يمرّر المتغيرات من process.env
 // وملف .env ممكن أن يُعيد NODE_ENV إلى development ويشوه مسار المهاجرات.
@@ -30,6 +31,11 @@ if (!isProduction) {
   if (envPath) {
     dotenv.config({ path: envPath });
   }
+}
+
+const runtimeMongoUri = resolveRuntimeSecret('MONGODB_URI');
+if (runtimeMongoUri && !process.env.MONGODB_URI) {
+  process.env.MONGODB_URI = runtimeMongoUri;
 }
 
 /**
@@ -57,12 +63,21 @@ const envSchema = z.object({
 
   // ── المزامنة ───────────────────────────────────
   MONGODB_URI: z.string().default(''),
+  MONGODB_DNS_SERVERS: z.string().default('1.1.1.1,8.8.8.8'),
   SYNC_ENABLED: z.enum(['true', 'false']).default('false').transform((v) => v === 'true'),
   SYNC_POLL_INTERVAL_MS: z.coerce.number().default(30000),
   SYNC_MAX_ATTEMPTS: z.coerce.number().default(5),
 
   // ── CORS ──────────────────────────────────────
   CORS_ORIGIN: z.string().default('http://localhost:5173'),
+}).superRefine((value, context) => {
+  if (value.SYNC_ENABLED && !value.MONGODB_URI.trim()) {
+    context.addIssue({
+      code: 'custom',
+      path: ['MONGODB_URI'],
+      message: 'MONGODB_URI مطلوب عند تفعيل المزامنة',
+    });
+  }
 });
 
 /**

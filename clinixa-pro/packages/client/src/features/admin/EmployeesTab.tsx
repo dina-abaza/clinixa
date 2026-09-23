@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Employee } from '@clinixa/shared';
-import { getEmployees, resetEmployeePassword, toggleEmployeeActive, type CreateEmployeeResponseData } from '../../lib/api/employees';
+import { getEmployees, resetEmployeePassword, toggleEmployeeActive, updateEmployeeBranch, type CreateEmployeeResponseData } from '../../lib/api/employees';
 import { getBranches } from '../../lib/api/branches';
 import { useAuthStore } from '../../lib/store/authStore';
 import { hasPermission } from '../../lib/permissions';
@@ -96,6 +96,16 @@ export function EmployeesTab() {
     setToast(t('admin.employees.toasts.permissionsUpdated'));
   }
 
+  async function handleBranchChange(employee: Employee, branchId: string) {
+    const res = await updateEmployeeBranch(employee.id, branchId);
+    if (res.ok) {
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      setToast('تم ربط الموظف بالفرع بنجاح');
+    } else {
+      setToast(res.error.message);
+    }
+  }
+
   return (
     <>
       <div className="page-head" style={{ marginBottom: 'var(--space-4)' }}>
@@ -158,7 +168,17 @@ export function EmployeesTab() {
                       </td>
                       <td className="num">{employee.username}</td>
                       <td>{t(`shell.roles.${employee.role}`)}</td>
-                      <td>{branchName(employee.branch_id)}</td>
+                      <td>
+                        {canEdit && !employee.is_owner ? (
+                          <select
+                            value={employee.branch_id ?? ''}
+                            onChange={(event) => void handleBranchChange(employee, event.target.value)}
+                            aria-label={`فرع الموظف ${employee.name_ar}`}
+                          >
+                            {branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name_ar}</option>)}
+                          </select>
+                        ) : branchName(employee.branch_id)}
+                      </td>
                       <td className="c-status">
                         {employee.is_active ? (
                           <span className="badge badge-success">{t('admin.employees.statusActive')}</span>

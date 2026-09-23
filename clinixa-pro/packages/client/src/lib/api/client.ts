@@ -6,7 +6,7 @@
  * مطابقة لسيرفر التطوير (packages/server, PORT=4321).
  */
 export const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:4321/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:4321/api',
   headers: { 'Content-Type': 'application/json' },
 });
 

@@ -5,6 +5,7 @@ import {
   updateBackupDestinationSchema,
   restoreBackupSchema,
   updateGoogleDriveSettingsSchema,
+  updateBackupScheduleSchema,
 } from './backup.validation';
 import {
   getBackupHistory,
@@ -15,6 +16,8 @@ import {
   updateGoogleDriveSettings,
   deleteGoogleDriveSettings,
   listGoogleDriveBackups,
+  getBackupSchedules,
+  updateBackupSchedule,
 } from './backup.service';
 
 /**
@@ -23,6 +26,31 @@ import {
 export async function listBackupHistory(_req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const result = await getBackupHistory();
+    res.status(200).json({ ok: true, data: result, warning: null });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/** @description معالجة جلب جدولة النسخ الاحتياطي */
+export async function listBackupSchedules(_req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const result = await getBackupSchedules();
+    res.status(200).json({ ok: true, data: result, warning: null });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/** @description معالجة تحديث جدولة النسخ الاحتياطي */
+export async function saveBackupSchedule(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const parsed = updateBackupScheduleSchema.safeParse(req.body);
+    if (!parsed.success) {
+      const issue = parsed.error.issues[0];
+      throw new AppError('VALIDATION_ERROR', issue.message, 400, issue.path.join('.'));
+    }
+    const result = await updateBackupSchedule(parsed.data);
     res.status(200).json({ ok: true, data: result, warning: null });
   } catch (err) {
     next(err);

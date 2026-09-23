@@ -9,8 +9,10 @@ import {
   updateGoogleDriveSettings,
   deleteGoogleDriveSettings,
   listGoogleDriveFiles,
+  getBackupSchedules,
+  updateBackupSchedule,
 } from '../../lib/api/backup';
-import type { GoogleDriveFileInfo } from '../../lib/api/backup';
+import type { BackupScheduleData, GoogleDriveFileInfo } from '../../lib/api/backup';
 import { useAuthStore } from '../../lib/store/authStore';
 import { hasPermission } from '../../lib/permissions';
 
@@ -46,6 +48,17 @@ export function BackupTab() {
       } catch (err) {
         console.error('Failed to select folder:', err);
       }
+    }
+  };
+
+  /** @description فتح نافذة اختيار مجلد النسخ التلقائي المحلي */
+  const handleBrowseScheduleFolder = async () => {
+    if (!window.clinixa?.selectFolder) return;
+    try {
+      const selected = await window.clinixa.selectFolder(localSchedulePath || undefined);
+      if (selected) setLocalSchedulePath(selected);
+    } catch (err) {
+      console.error('Failed to select automatic backup folder:', err);
     }
   };
 
@@ -86,6 +99,16 @@ export function BackupTab() {
   const [showPassword, setShowPassword] = useState(false);
   const [showDriveGuide, setShowDriveGuide] = useState(false);
   const [codeCopied, setCodeCopied] = useState(false);
+  const [localSchedule, setLocalSchedule] = useState<BackupScheduleData>({
+    destination: 'local_device', is_enabled: false, frequency: 'daily', time: '02:00',
+    day_of_week: null, target_path: null, has_backup_password: false, updated_at: null,
+  });
+  const [driveSchedule, setDriveSchedule] = useState<BackupScheduleData>({
+    destination: 'google_drive', is_enabled: false, frequency: 'daily', time: '02:00',
+    day_of_week: null, target_path: null, has_backup_password: false, updated_at: null,
+  });
+  const [localSchedulePath, setLocalSchedulePath] = useState('');
+  const [localSchedulePassword, setLocalSchedulePassword] = useState('');
 
   useEffect(() => {
     if (!toast) return;
@@ -106,6 +129,11 @@ export function BackupTab() {
   });
   const driveSettings = driveQuery.data?.ok ? driveQuery.data.data : null;
 
+  const schedulesQuery = useQuery({
+    queryKey: ['backup-schedules'],
+    queryFn: getBackupSchedules,
+  });
+
   // Drive files query — only fetch when user selects google_drive restore mode
   const driveFilesQuery = useQuery({
     queryKey: ['google-drive-files'],
@@ -122,6 +150,18 @@ export function BackupTab() {
     setGdScriptUrl(driveSettings.script_url ?? '');
     setGdEnabled(driveSettings.is_enabled);
   }, [driveSettings]);
+
+  useEffect(() => {
+    if (!schedulesQuery.data?.ok) return;
+    const schedules = schedulesQuery.data.data.schedules;
+    const local = schedules.find((item) => item.destination === 'local_device');
+    const drive = schedules.find((item) => item.destination === 'google_drive');
+    if (local) {
+      setLocalSchedule(local);
+      setLocalSchedulePath(local.target_path ?? '');
+    }
+    if (drive) setDriveSchedule(drive);
+  }, [schedulesQuery.data]);
 
   // ─── Mutations ─────────────────────────────────────────────────────────────
   const runMutation = useMutation({
@@ -198,6 +238,30 @@ export function BackupTab() {
     },
   });
 
+  const scheduleMutation = useMutation({
+    mutationFn: updateBackupSchedule,
+    onSuccess: (res) => {
+      if (!res.ok) return;
+      queryClient.invalidateQueries({ queryKey: ['backup-schedules'] });
+      setLocalSchedulePassword('');
+      setToast('تم حفظ جدولة النسخ الدوري بنجاح');
+    },
+  });
+
+  const saveSchedule = (schedule: BackupScheduleData) => {
+    scheduleMutation.mutate({
+      destination: schedule.destination,
+      is_enabled: schedule.is_enabled,
+      frequency: schedule.frequency,
+      time: schedule.time,
+      day_of_week: schedule.frequency === 'weekly' ? schedule.day_of_week : null,
+      target_path: schedule.destination === 'local_device' ? (localSchedulePath.trim() || null) : null,
+      backup_password: schedule.destination === 'local_device'
+        ? (localSchedulePassword.trim() || undefined)
+        : undefined,
+    });
+  };
+
   const handleSaveDriveSettings = () => {
     setDriveValidationError(null);
     const url = gdScriptUrl.trim();
@@ -235,6 +299,142 @@ export function BackupTab() {
   const runError = runMutation.data?.ok === false ? runMutation.data.error.message : null;
   const runDriveError = runDriveMutation.data?.ok === false ? runDriveMutation.data.error.message : null;
   const savedriveError = driveValidationError || (saveDriveMutation.data?.ok === false ? saveDriveMutation.data.error.message : null);
+
+  const updateScheduleState = (destination: BackupScheduleData['destination'], patch: Partial<BackupScheduleData>) => {
+    if (destination === 'local_device') {
+      setLocalSchedule((current) => ({ ...current, ...patch }));
+    } else {
+      setDriveSchedule((current) => ({ ...current, ...patch }));
+    }
+  };
+
+  const renderScheduleControls = (schedule: BackupScheduleData, isLocal: boolean) => (
+    <div style={{ border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md, 8px)', padding: 'var(--space-4)', marginTop: 'var(--space-4)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-3)', marginBottom: 'var(--space-3)' }}>
+        <strong>النسخ الدوري</strong>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', cursor: 'pointer' }}>
+          <input
+            type="checkbox"
+            checked={schedule.is_enabled}
+            onChange={(event) => updateScheduleState(schedule.destination, { is_enabled: event.target.checked })}
+          />
+          <span>تفعيل النسخ الدوري</span>
+        </label>
+      </div>
+
+      <div className="form-grid">
+        <div className="form-field">
+          <label>التكرار</label>
+          <select
+            value={schedule.frequency}
+            onChange={(event) => {
+              const frequency = event.target.value as BackupScheduleData['frequency'];
+              updateScheduleState(schedule.destination, {
+                frequency,
+                day_of_week: frequency === 'weekly' ? (schedule.day_of_week ?? 0) : null,
+              });
+            }}
+          >
+            <option value="minutely">كل دقيقة</option>
+            <option value="hourly">كل ساعة</option>
+            <option value="daily">يومياً</option>
+            <option value="weekly">أسبوعياً</option>
+          </select>
+        </div>
+        {schedule.frequency !== 'minutely' && (
+          <div className="form-field">
+            <label>{schedule.frequency === 'hourly' ? 'الدقيقة داخل كل ساعة' : 'الوقت'}</label>
+            {schedule.frequency === 'hourly' ? (
+              <input
+                type="number"
+                min={0}
+                max={59}
+                step={1}
+                value={Number(schedule.time.slice(3, 5))}
+                onChange={(event) => {
+                  const minute = Math.max(0, Math.min(59, Number(event.target.value) || 0));
+                  updateScheduleState(schedule.destination, { time: `00:${String(minute).padStart(2, '0')}` });
+                }}
+                dir="ltr"
+              />
+            ) : (
+              <input
+                type="time"
+                value={schedule.time}
+                onChange={(event) => updateScheduleState(schedule.destination, { time: event.target.value })}
+                dir="ltr"
+              />
+            )}
+          </div>
+        )}
+        {schedule.frequency === 'weekly' && (
+          <div className="form-field">
+            <label>يوم الأسبوع</label>
+            <select
+              value={schedule.day_of_week ?? 0}
+              onChange={(event) => updateScheduleState(schedule.destination, { day_of_week: Number(event.target.value) })}
+            >
+              <option value={0}>الأحد</option>
+              <option value={1}>الإثنين</option>
+              <option value={2}>الثلاثاء</option>
+              <option value={3}>الأربعاء</option>
+              <option value={4}>الخميس</option>
+              <option value={5}>الجمعة</option>
+              <option value={6}>السبت</option>
+            </select>
+          </div>
+        )}
+      </div>
+
+      {isLocal && (
+        <>
+          <div className="form-field" style={{ marginTop: 'var(--space-3)' }}>
+            <label>مجلد النسخ التلقائي (اختياري)</label>
+            <div style={{ display: 'flex', alignItems: 'stretch', gap: 'var(--space-2)' }}>
+              <input
+                type="text"
+                value={localSchedulePath}
+                onChange={(event) => setLocalSchedulePath(event.target.value)}
+                placeholder="يستخدم المجلد الافتراضي إذا تُرك فارغاً"
+                dir="ltr"
+                style={{ flex: 1, minWidth: 0 }}
+              />
+              <button
+                type="button"
+                className="btn btn-secondary btn-inline"
+                onClick={handleBrowseScheduleFolder}
+                style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', flexShrink: 0 }}
+              >
+                <svg width={16} height={16} aria-hidden="true"><use href="#i-folder" /></svg>
+                <span>{localSchedulePath ? 'تغيير المجلد' : 'اختيار مجلد'}</span>
+              </button>
+              {localSchedulePath && (
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-inline"
+                  onClick={() => setLocalSchedulePath('')}
+                  title="استخدام المجلد الافتراضي"
+                  aria-label="استخدام المجلد الافتراضي"
+                >
+                  <svg width={16} height={16} aria-hidden="true"><use href="#i-x" /></svg>
+                </button>
+              )}
+            </div>
+          </div>
+          <div className="form-field" style={{ marginTop: 'var(--space-3)' }}>
+            <label>كلمة مرور النسخة (اختياري)</label>
+            <input type="password" value={localSchedulePassword} onChange={(event) => setLocalSchedulePassword(event.target.value)} placeholder={schedule.has_backup_password ? 'محفوظة - اكتب قيمة جديدة للتغيير' : 'بدون تشفير إذا تُرك فارغاً'} dir="ltr" autoComplete="new-password" />
+          </div>
+        </>
+      )}
+
+      <button type="button" className="btn btn-primary btn-inline" style={{ marginTop: 'var(--space-4)' }} onClick={() => saveSchedule(schedule)} disabled={scheduleMutation.isPending}>
+        <svg className="spinner" width={18} height={18} aria-hidden="true"><use href="#i-loader" /></svg>
+        <svg width={18} height={18} aria-hidden="true"><use href="#i-check" /></svg>
+        <span>حفظ الجدولة</span>
+      </button>
+    </div>
+  );
 
   return (
     <>
@@ -350,6 +550,8 @@ export function BackupTab() {
             <svg width={18} height={18} aria-hidden="true"><use href="#i-alert-circle" /></svg>
             <span>{runError}</span>
           </div>
+
+          {renderScheduleControls(localSchedule, true)}
 
           <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', marginTop: 'var(--space-4)' }}>
             <button
@@ -629,6 +831,8 @@ export function BackupTab() {
               </div>
             </div>
           </div>
+
+          {renderScheduleControls(driveSchedule, false)}
 
           {/* Error */}
           <div className={`form-error${savedriveError ? ' on' : ''}`} role="alert">

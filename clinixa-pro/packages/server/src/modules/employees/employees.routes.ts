@@ -7,6 +7,7 @@ import {
   updatePermissions,
   resetPassword,
   toggleActive,
+  updateBranch,
 } from './employees.controller';
 
 const router = Router();
@@ -20,5 +21,6 @@ router.post('/', requirePermission('admin.edit'), createNewEmployee);
 router.put('/:id/permissions', requirePermission('admin.edit'), updatePermissions);
 router.patch('/:id/reset-password', requirePermission('admin.edit'), resetPassword);
 router.patch('/:id/toggle-active', requirePermission('admin.edit'), toggleActive);
+router.patch('/:id/branch', requirePermission('admin.edit'), updateBranch);
 
 export default router;

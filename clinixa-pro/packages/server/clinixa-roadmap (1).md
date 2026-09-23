@@ -19,7 +19,7 @@
 | `packages/server/src/db/sqlite/client.ts`                | ✅ Singleton + WAL mode + foreign_keys                                                                                                                                  |
 | Migrations (٥ من ١١ مجموعة)                              | ✅ `branches`, `clinic_settings`+`clinic_prices`, `employees`+`employee_permissions`, `patients`+`patient_sequences`, `patient_emergency_contacts`+`patient_follow_ups` |
 | `.agents/rules/` + `AGENTS.md`                           | ✅ موحّدة ومتطابقة بين النسختين                                                                                                                                         |
-| `packages/client`                                        | ✅ Vite scaffold بس (لسه مفيهوش أي منطق فعلي — مش شغلك دلوقتي)                                                                                                          |
+| `packages/client`                                        | ✅ واجهة فعلية تحتوي auth, dashboard, patients, attendance, payments, inventory, admin, backup, licensing، وليست مجرد Vite scaffold |
 | `packages/electron`                                      | ⚠️ `package.json` بس، مفيش كود Electron لسه                                                                                                                             |
 
 ### ❌ لسه معمول صفر فيه
@@ -152,10 +152,10 @@
 
 - [✅ ] `sync.repository.ts` — upsert pointer في outbox
 - [✅ ] `sync.triggers.ts` — hook في كل service بيغيّر جدول Syncable
-- [✅ ] `sync.connectivity.ts` — فحص اتصال فعلي
-- [✅ ] `sync.engine.ts` — الحلقة الكاملة (pending→syncing→synced/failed) + upsert على Mongo Atlas
+- [⚠️ ] `sync.connectivity.ts` — غير موجود حاليًا؛ لا يوجد فحص اتصال Mongo فعلي
+- [⚠️ ] `sync.engine.ts` — الموجود حاليًا يعالج outbox بشكل تجريبي فقط؛ لا يوجد `mongoose`/`MongoClient` ولا upsert فعلي على Mongo Atlas
 - [✅ ] `GET /sync/status` + `POST /sync/retry`
-- [✅ ] اختبار قطع نت فعلي (يدوي) والتأكد إن البيانات بترجع تتزامن لوحدها
+- [ ] اختبار قطع نت فعلي (يدوي) والتأكد إن البيانات بترجع تتزامن لوحدها
 
 ---
 
@@ -176,7 +176,7 @@
 - [✅ ] `packages/electron/src/preload.ts` — الجسر الآمن (`contextBridge`)
 - [✅ ] `ipc/print.handler.ts` — طباعة الإيصالات
 - [✅ ] `ipc/file-dialog.handler.ts` — اختيار وجهة النسخ الاحتياطي (فلاشة/مجلد محلي)
-- [✅ ] `jobs/backupScheduler.ts` (`node-cron`) — نسخ احتياطي تلقائي مجدول
+- [✅ ] `packages/server/src/modules/backup/backup.scheduler.ts` (`node-cron`) — تشغيل جدولة النسخ التلقائي من السيرفر المضمّن
 - [✅ ] تجربة: طباعة إيصال فعلي من التطبيق، واختيار مسار نسخ احتياطي من نافذة حوار حقيقية
 
 **اليوم ١٨: مسار المستخدم الكامل E2E**
@@ -198,6 +198,18 @@
 - [✅] تكامل فعلي مع Google Apps Script Web App مع تشفير البيانات بكلمة سر وتخزين المفاتيح في جدول `google_drive_settings`
 - [✅] معالجة أسباب الفشل الموثّقة (`token`, `offline`, `device`) وتسجيلها في `backup_history.fail_reason` وتوليد `system_alerts`
 - [✅] مسارات API كاملة لإدارة وحذف وتحديث إعدادات Google Drive (`GET`, `PUT`, `DELETE /api/backup/google-drive`)
+
+**إضافة منفذة بعد آخر تحديث للخطة: النسخ الاحتياطي التلقائي المرن**
+
+- [✅] Migration مستقلة `backup_schedules` بجدول منفصل للنسخ المحلي وGoogle Drive.
+- [✅] API لجلب وحفظ جدولة كل وجهة (`GET/PUT /api/backup/schedules`).
+- [✅] تشغيل تلقائي عبر `node-cron` كل دقيقة مع منع التشغيل المتوازي.
+- [✅] فترات جدولة: كل دقيقة، كل ساعة، يوميًا، وأسبوعيًا.
+- [✅] في وضع كل ساعة يتم اختيار الدقيقة فقط من `0` إلى `59`.
+- [✅] تفعيل مستقل لكل وجهة، مع مسار وكلمة مرور منفصلين للنسخ المحلي.
+- [✅] دمج عناصر الجدولة داخل قسم النسخ المحلي وقسم Google Drive بدل قسم مستقل.
+- [✅] اختيار مجلد النسخ التلقائي من نافذة النظام عبر Electron، مع خيار العودة للمجلد الافتراضي.
+- [✅] بناء السيرفر والعميل بعد الإضافة بدون أخطاء TypeScript.
 
 ---
 
@@ -229,6 +241,8 @@
 - [ ] توقيع الملف (Code Signing) — مهم لتفادي تحذيرات Windows Defender للعملاء
 - [ ] `auto-updater.ts` (اختياري للنسخة الأولى، أساسي للتحديثات بعد كده)
 - [ ] اختبار التثبيت الكامل على جهاز نظيف (مش جهاز التطوير بتاعك) — أهم اختبار قبل التسليم لأي عميل
+
+> **حالة جزئية:** تم إنتاج Installer فعلي داخل `dist-installer/`، لكن التوقيع الرقمي واختبار التثبيت على جهاز نظيف لم يتم التحقق منهما بعد.
 
 ---
 
@@ -274,3 +288,38 @@
 ابدأ فورًا بـ **اليوم ١ من المرحلة ١**: `006_medical_records.ts`. عندك كل الأعمدة والأنواع جاهزة في `clinixa-backend-architecture.md` قسم ٢ — استخدم نفس نمط الـ ٥ migrations اللي عملتهم بالظبط (نفس أسلوب التعليقات، نفس ترتيب `up`/`down`).
 
 **تذكير مهم:** ابعتلي كل مجموعة migrations بمجرد ما تخلص (مش لازم تستنى آخر اليوم) — المراجعة بتاعتي بتكشف حاجات حقيقية بالكود، وكل ما نراجع بدري كل ما وفرنا وقت أكتر.
+
+---
+
+## 🧾 مراجعة حالة الخطة — 2026-09-23
+
+تمت مراجعة الخطة مقابل الملفات الموجودة فعليًا في الريبو. التحديثات المؤكدة:
+
+- [✅] تمت إضافة Migration جديدة `20260923000013_backup_schedules.ts` لجدولة النسخ المحلي وGoogle Drive.
+- [✅] تمت إضافة API جدولة مستقل: `GET/PUT /api/backup/schedules`.
+- [✅] تمت إضافة `backup.scheduler.ts` وتشغيله بعد اكتمال migrations داخل السيرفر المضمّن.
+- [✅] الواجهة تدعم كل دقيقة، كل ساعة، يوميًا، وأسبوعيًا، مع إعداد مستقل لكل وجهة.
+- [✅] خيار كل ساعة يطلب الدقيقة فقط، وخيار النسخ المحلي يتيح اختيار المجلد من نافذة Electron.
+- [✅] نجح `npm run build --workspace=server` و`npm run build --workspace=client` بعد آخر تعديل.
+- [⚠️] اختبار `backup_drive.test.ts` مرّ في 11 من 12 حالة؛ حالة واحدة قديمة تتوقع `404` بينما السلوك الحالي يرجع `400` عند نقص إعدادات Drive.
+- [⚠️] `MONGODB_URI` موجود كإعداد بيئي فقط، لكن الاتصال الفعلي بـ MongoDB والمزامنة الحقيقية لم تُنفذ بعد؛ `sync.repository.ts` يصف التنفيذ الحالي بأنه simulated sync.
+- [🔒] لم يتم وضع رابط MongoDB أو كلمة المرور داخل الكود أو Installer؛ يلزم تنفيذ مزامنة عبر Backend مركزي قبل تفعيل فروع متعددة بأمان.
+
+---
+
+## المرحلة ١٣ — تفعيل المزامنة ثنائية الاتجاه بأمان
+
+**الحالة:** ✅ التنفيذ البرمجي الأساسي مكتمل، مع بقاء اختبار Atlas الحقيقي والتشغيل متعدد الفروع كاختبار قبول قبل الإنتاج.
+
+- [✅] `mongo.adapter.ts` — اتصال Mongo عبر `MONGODB_URI` من بيئة السيرفر فقط، بدون طباعة URI في logs.
+- [✅] رفع سجلات `sync_outbox` الفعلية إلى collections مطابقة مع Last-Write-Wins اعتمادًا على `updated_at`.
+- [✅] معالجة الحذف المحلي عبر إزالة السجل المقابل من Mongo.
+- [✅] سحب تعديلات الفروع الأخرى من Mongo وتطبيقها في SQLite مع إزالة الحقول الداخلية الخاصة بالمزامنة.
+- [✅] منع إعادة إنشاء pointer عالق بعد استقبال سجل من Mongo.
+- [✅] SQLite triggers تلقائية لكل الجداول القابلة للمزامنة لتسجيل pointer بعد INSERT/UPDATE/DELETE.
+- [✅] حلقة خلفية دورية عبر `SYNC_POLL_INTERVAL_MS` مع منع التشغيل المتوازي.
+- [✅] حارس إعدادات: لا تبدأ المزامنة عند تفعيلها بدون `MONGODB_URI`.
+- [✅] اختبارات معزولة بدون شبكة حقيقية: trigger، رفع ناجح، فشل وإعادة محاولة، وسحب عكسي.
+- [ ] اختبار اتصال Atlas حقيقي باستخدام Secret خارجي، دون تخزين URI في Git أو داخل Installer.
+- [ ] اختبار فروع متعددة وتعارضات `updated_at` وقطع الاتصال ثم الاستئناف.
+- [ ] إنشاء مستخدم Mongo بصلاحيات محدودة على قاعدة `clinixa` وتفعيل Network Access/ TLS في Atlas.

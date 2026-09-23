@@ -6,6 +6,7 @@
 import crypto from 'crypto';
 import query from '../../db/sqlite/query';
 import type { SyncStatus } from '@clinixa/shared';
+import type { SyncableTable } from '@clinixa/shared';
 
 /**
  * @description بنية ملخص حالة المزامنة
@@ -15,6 +16,16 @@ export interface SyncSummary {
   mode: 'none' | 'local_server' | 'external_hosting';
   pending_count: number;
   last_sync_at: string | null;
+}
+
+/** @description صف outbox المطلوب رفعه إلى Mongo */
+export interface SyncOutboxRow {
+  id: string;
+  table_name: SyncableTable;
+  record_id: string;
+  branch_id: string;
+  status: SyncStatus;
+  attempts: number;
 }
 
 /**
@@ -114,4 +125,45 @@ export async function retryPendingOutboxRecords(): Promise<number> {
   }
 
   return rows.length;
+}
+
+/** @description جلب دفعة من صفوف outbox الجاهزة للرفع */
+export async function getPendingOutboxRecords(limit = 25): Promise<SyncOutboxRow[]> {
+  return query('sync_outbox')
+    .whereIn('status', ['pending', 'failed'])
+    .where('attempts', '<', 5)
+    .orderBy('created_at', 'asc')
+    .limit(limit) as unknown as SyncOutboxRow[];
+}
+
+/** @description تغيير حالة صف outbox مع بيانات الخطأ أو وقت المزامنة */
+export async function updateOutboxStatus(
+  id: string,
+  status: SyncStatus,
+  details: { attempts?: number; last_error?: string | null; synced_at?: string | null } = {}
+): Promise<void> {
+  await query('sync_outbox').where({ id }).update({
+    status,
+    updated_at: new Date().toISOString(),
+    ...details,
+  });
+}
+
+/** @description قراءة السجل الحالي من SQLite أو معرفة أنه حُذف */
+export async function getOutboxRecord(row: SyncOutboxRow): Promise<Record<string, unknown> | null> {
+  const record = await query(row.table_name).where({ id: row.record_id }).first();
+  return record ? (record as Record<string, unknown>) : null;
+}
+
+/** @description تطبيق سجل قادم من Mongo محليًا ثم إزالة pointer الناتج عن الاستقبال */
+export async function applyRemoteRecord(
+  tableName: SyncableTable,
+  document: Record<string, unknown>
+): Promise<void> {
+  const { _id, _synced_from_branch: _syncedFromBranch, _synced_at: _syncedAt, ...fields } = document;
+  const recordId = String(_id ?? fields.id ?? '');
+  if (!recordId) throw new Error(`السجل القادم من ${tableName} لا يحتوي على معرف`);
+
+  await query(tableName).insert({ ...fields, id: recordId }).onConflict('id').merge();
+  await query('sync_outbox').where({ table_name: tableName, record_id: recordId }).del();
 }

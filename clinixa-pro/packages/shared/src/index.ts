@@ -83,6 +83,7 @@ export type {
   BackupDestination,
   BackupFailReason,
   BackupKind,
+  BackupSchedule,
   BackupStatus,
   ChargeType,
   DocumentType,

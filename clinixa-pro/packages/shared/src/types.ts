@@ -383,6 +383,18 @@ export interface GoogleDriveSettings {
   updated_at: string | null;
 }
 
+/** @description إعداد جدولة النسخ الاحتياطي لوجهة محددة */
+export interface BackupSchedule {
+  destination: BackupDestination;
+  is_enabled: boolean;
+  frequency: 'minutely' | 'hourly' | 'daily' | 'weekly';
+  time: string;
+  day_of_week: number | null;
+  target_path: string | null;
+  has_backup_password: boolean;
+  updated_at: string | null;
+}
+
 /** @description مدخلات تحديث إعدادات Google Drive */
 export interface UpdateGoogleDriveSettingsInput {
   script_url?: string | null;

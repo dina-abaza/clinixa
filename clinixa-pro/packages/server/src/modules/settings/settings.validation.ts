@@ -12,6 +12,9 @@ export const updateSettingsSchema = z.object({
       name_ar: z.string().min(1, 'اسم العيادة بالعربية مطلوب').optional(),
       phone: z.string().nullable().optional(),
       address: z.string().nullable().optional(),
+      sync_mode: z.enum(['none', 'local_server', 'external_hosting'], {
+        message: 'وضع المزامنة غير صالح',
+      }).optional(),
     })
     .optional(),
   prices: z

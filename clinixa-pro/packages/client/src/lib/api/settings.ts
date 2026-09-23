@@ -32,6 +32,7 @@ export interface UpdateSettingsRequest {
     name_ar?: string;
     phone?: string | null;
     address?: string | null;
+    sync_mode?: SyncMode;
   };
   prices?: Array<{ charge_type: ChargeType; default_amount: number }>;
 }

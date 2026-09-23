@@ -5,6 +5,7 @@ import {
   createEmployeeSchema,
   updatePermissionsSchema,
   toggleActiveEmployeeSchema,
+  updateBranchSchema,
 } from './employees.validation';
 import {
   getEmployees,
@@ -12,6 +13,7 @@ import {
   updateEmployeePermissions,
   resetEmployeePassword,
   toggleEmployeeActive,
+  updateEmployeeBranch,
 } from './employees.service';
 
 /**
@@ -25,7 +27,7 @@ export async function listEmployees(req: Request, res: Response, next: NextFunct
       throw new AppError('VALIDATION_ERROR', issue.message, 400, issue.path.join('.'));
     }
 
-    const branchId = parsed.data.branch_id || (req.employee?.is_owner ? undefined : req.employee?.branch_id);
+    const branchId = req.employee?.is_owner ? parsed.data.branch_id : req.employee?.branch_id;
     const result = await getEmployees(branchId);
     res.status(200).json({ ok: true, data: result, warning: null });
   } catch (err) {
@@ -44,7 +46,10 @@ export async function createNewEmployee(req: Request, res: Response, next: NextF
       throw new AppError('VALIDATION_ERROR', issue.message, 400, issue.path.join('.'));
     }
 
-    const result = await createEmployee(parsed.data);
+    const input = req.employee?.is_owner
+      ? parsed.data
+      : { ...parsed.data, branch_id: req.employee?.branch_id ?? parsed.data.branch_id };
+    const result = await createEmployee(input);
     res.status(201).json({ ok: true, data: result, warning: null });
   } catch (err) {
     next(err);
@@ -96,6 +101,20 @@ export async function toggleActive(req: Request, res: Response, next: NextFuncti
 
     const employeeId = req.params.id as string;
     const result = await toggleEmployeeActive(employeeId, parsed.data);
+    res.status(200).json({ ok: true, data: result, warning: null });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function updateBranch(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const parsed = updateBranchSchema.safeParse(req.body);
+    if (!parsed.success) {
+      const issue = parsed.error.issues[0];
+      throw new AppError('VALIDATION_ERROR', issue.message, 400, issue.path.join('.'));
+    }
+    const result = await updateEmployeeBranch(req.params.id as string, parsed.data);
     res.status(200).json({ ok: true, data: result, warning: null });
   } catch (err) {
     next(err);

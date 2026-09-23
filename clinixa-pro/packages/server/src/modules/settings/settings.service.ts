@@ -72,6 +72,7 @@ export async function updateClinicSettings(
       if (input.clinic.name_ar !== undefined) updateData.name_ar = input.clinic.name_ar;
       if (input.clinic.phone !== undefined) updateData.phone = input.clinic.phone;
       if (input.clinic.address !== undefined) updateData.address = input.clinic.address;
+      if (input.clinic.sync_mode !== undefined) updateData.sync_mode = input.clinic.sync_mode;
 
       await trx('clinic_settings').where({ id: 'singleton' }).update(updateData);
     }
