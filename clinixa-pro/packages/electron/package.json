@@ -4,9 +4,9 @@
   "description": "Clinixa desktop shell",
   "main": "dist/main.js",
   "scripts": {
-    "build": "tsc",
-    "start": "electron .",
-    "dev": "npm run build && electron .",
+    "build": "node init && tsc",
+    "start": "node init && electron .",
+    "dev": "node init && npm run build && electron .",
     "dist": "electron-builder --win nsis"
   },
   "keywords": [],

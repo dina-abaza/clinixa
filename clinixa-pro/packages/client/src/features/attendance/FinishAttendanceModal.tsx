@@ -96,7 +96,7 @@ export function FinishAttendanceModal({ attendanceId, patientName, onClose, onFi
               {t('attendance.finishModal.chargesSection')}
             </div>
             {rows.map((row) => (
-              <div key={row.key} className="ci-two" style={{ marginBottom: 'var(--space-2)', alignItems: 'center' }}>
+              <div key={row.key} className="ci-two" style={{ display: 'flex', gap: 'var(--space-3)', marginBottom: 'var(--space-2)', alignItems: 'center' }}>
                 <div className="select-inline">
                   <select
                     value={row.charge_type}

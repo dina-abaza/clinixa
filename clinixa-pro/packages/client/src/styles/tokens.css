@@ -347,7 +347,10 @@ input, select, textarea { font: inherit; color: inherit; }
   display: block; font-size: var(--text-caption); font-weight: 500;
   color: var(--color-text-auth-secondary); margin-bottom: var(--space-2);
 }
-.input-wrap { position: relative; display: flex; align-items: center; }
+/* gap مالوش أي تأثير على `.lead-icon` (موضّع absolute، برّه الـflow) —
+   بس لازم للأيقونة اللي بتتحط كـflex child عادي جنب الحقل (زي أيقونة
+   القفل في حقول الباسورد هنا)، وإلا بتلزق في حافة الحقل من غير مسافة */
+.input-wrap { position: relative; display: flex; align-items: center; gap: var(--space-2); }
 .input-wrap > .lead-icon {
   position: absolute; inset-inline-start: var(--space-3);
   color: var(--color-text-disabled); pointer-events: none; display: grid;
@@ -980,6 +983,9 @@ html[dir="ltr"] .input-wrap input.num { text-align: left; }
 .data-table .c-time   { width: 96px; }
 .data-table .c-due    { width: 118px; }
 .data-table .c-act    { width: 56px; }
+/* مقيس على أطول شارة فعلية: "أقل من الحد الأدنى" — من غيرها العمود بياخد
+   مساحة زيادة جدًا على الشاشات العريضة ويبعّد باقي الأعمدة عن بعض */
+.data-table .c-status { width: 150px; }
 .data-table thead th {
   position: sticky; top: 0; z-index: 2;
   text-align: start; white-space: nowrap;
@@ -1004,6 +1010,12 @@ html[dir="ltr"] .input-wrap input.num { text-align: left; }
 /* الخليتين دول فيهم عناصر بتخرج برّه حدودهم بشكل مقصود
    (مساحة لمس الـ Checkbox، وقايمة أفعال الصف) — ممنوع القص عليهم */
 .data-table td.c-check, .data-table td.c-act { overflow: visible; }
+/* خلية `.num` بتاخد direction:ltr عشان الرقم يتكتب صح، فلما يوصلها
+   `text-align: start` بالتوريث بيتفسّر حسب اتجاهها الخاص (ltr) = شمال،
+   مش حسب اتجاه الصفحة — فيتزحلق عن عنوان العمود (th) اللي فاضل rtl.
+   لازم جهة فعلية ثابتة بدل الكلمة المنطقية عشان الاتنين يتطابقوا. */
+html[dir="rtl"] .data-table td.num { text-align: right; }
+html[dir="ltr"] .data-table td.num { text-align: left; }
 /* ═══ حافتَي الصف (قرار 225) ═══
    أول عمود بيلزق في حافة البداية وآخر عمود في حافة النهاية — وإلا العمود
    الأخير المتوسّط بيسيب فراغ ميّت في آخر الصف والجدول يبان مايل ناحية.

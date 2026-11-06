@@ -141,7 +141,17 @@ export function PatientProfilePage() {
 
       {tab === 'overview' ? (
         <div className="detail-card glass">
-          <div className="detail-grid">
+          <div
+            className="detail-grid"
+            style={{
+              gridTemplateColumns: 'repeat(2, minmax(0, 320px))',
+              gridAutoFlow: 'column',
+              gridTemplateRows: 'repeat(3, auto)',
+              columnGap: 'var(--space-8)',
+              rowGap: 'var(--space-4)',
+              justifyContent: 'start',
+            }}
+          >
             <div className="detail-item">
               <span className="detail-label">{t('patients.fields.phone')}</span>
               <span className="detail-value num">{patient.phone}</span>
@@ -150,7 +160,7 @@ export function PatientProfilePage() {
               <span className="detail-label">{t('patients.fields.address')}</span>
               <span className={`detail-value${patient.address ? '' : ' muted'}`}>{patient.address || '—'}</span>
             </div>
-            <div className="detail-item wide">
+            <div className="detail-item">
               <span className="detail-label">{t('patients.fields.notes')}</span>
               <span className={`detail-value${patient.notes ? '' : ' muted'}`}>{patient.notes || '—'}</span>
             </div>
@@ -161,15 +171,15 @@ export function PatientProfilePage() {
               </span>
             </div>
             <div className="detail-item">
-              <span className="detail-label">{t('patients.fields.emergencyRelation')}</span>
-              <span className={`detail-value${patient.emergency_contact?.relation ? '' : ' muted'}`}>
-                {patient.emergency_contact?.relation ? t(RELATION_LABEL_KEYS[patient.emergency_contact.relation]) : '—'}
-              </span>
-            </div>
-            <div className="detail-item">
               <span className="detail-label">{t('patients.fields.emergencyPhone')}</span>
               <span className={`detail-value num${patient.emergency_contact?.phone ? '' : ' muted'}`}>
                 {patient.emergency_contact?.phone || '—'}
+              </span>
+            </div>
+            <div className="detail-item">
+              <span className="detail-label">{t('patients.fields.emergencyRelation')}</span>
+              <span className={`detail-value${patient.emergency_contact?.relation ? '' : ' muted'}`}>
+                {patient.emergency_contact?.relation ? t(RELATION_LABEL_KEYS[patient.emergency_contact.relation]) : '—'}
               </span>
             </div>
           </div>

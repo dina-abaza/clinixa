@@ -81,47 +81,51 @@ export function PatientFinanceTab({ patientId, patientName, due }: Props) {
 
       <div className="fin-grid">
         <div className="detail-card glass">
-          <div className="card-head" style={{ margin: 'calc(-1 * var(--space-5)) calc(-1 * var(--space-5)) var(--space-4)' }}>
+          <div className="card-head">
             <h3>{t('patients.finance.charges')}</h3>
             <span className="panel-head cnt-badge">{charges.length}</span>
           </div>
-          {charges.length === 0 ? (
-            <p className="detail-value muted" style={{ margin: 0 }}>—</p>
-          ) : (
-            <ul className="fin-list">
-              {charges.map((c) => (
-                <li key={c.id} className="fin-row">
-                  <span className="fin-txt">
-                    {CHARGE_TYPE_LABELS[c.type] ?? c.type}
-                    <span className="fin-date num">{c.date}</span>
-                  </span>
-                  <span className="fin-amt debit num">{c.amount.toLocaleString()}</span>
-                </li>
-              ))}
-            </ul>
-          )}
+          <div className="card-body">
+            {charges.length === 0 ? (
+              <p className="detail-value muted" style={{ margin: 0 }}>—</p>
+            ) : (
+              <ul className="fin-list">
+                {charges.map((c) => (
+                  <li key={c.id} className="fin-row">
+                    <span className="fin-txt">
+                      {CHARGE_TYPE_LABELS[c.type] ?? c.type}
+                      <span className="fin-date num">{c.date}</span>
+                    </span>
+                    <span className="fin-amt debit num">{c.amount.toLocaleString()}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
 
         <div className="detail-card glass">
-          <div className="card-head" style={{ margin: 'calc(-1 * var(--space-5)) calc(-1 * var(--space-5)) var(--space-4)' }}>
+          <div className="card-head">
             <h3>{t('patients.finance.payments')}</h3>
             <span className="panel-head cnt-badge">{payments.length}</span>
           </div>
-          {payments.length === 0 ? (
-            <p className="detail-value muted" style={{ margin: 0 }}>—</p>
-          ) : (
-            <ul className="fin-list">
-              {payments.map((p) => (
-                <li key={p.id} className="fin-row">
-                  <span className="fin-txt">
-                    {PAYMENT_METHOD_LABELS[p.method] ?? p.method}
-                    <span className="fin-date num">{p.date}</span>
-                  </span>
-                  <span className="fin-amt credit num">{p.amount.toLocaleString()}</span>
-                </li>
-              ))}
-            </ul>
-          )}
+          <div className="card-body">
+            {payments.length === 0 ? (
+              <p className="detail-value muted" style={{ margin: 0 }}>—</p>
+            ) : (
+              <ul className="fin-list">
+                {payments.map((p) => (
+                  <li key={p.id} className="fin-row">
+                    <span className="fin-txt">
+                      {PAYMENT_METHOD_LABELS[p.method] ?? p.method}
+                      <span className="fin-date num">{p.date}</span>
+                    </span>
+                    <span className="fin-amt credit num">{p.amount.toLocaleString()}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
       </div>
 

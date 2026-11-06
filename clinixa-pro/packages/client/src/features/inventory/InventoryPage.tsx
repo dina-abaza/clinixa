@@ -125,10 +125,10 @@ export function InventoryPage() {
             <thead>
               <tr>
                 <th scope="col" className="c-name">{t('inventory.columns.item')}</th>
-                <th scope="col">{t('inventory.columns.type')}</th>
+                <th scope="col" style={{ width: 150 }}>{t('inventory.columns.type')}</th>
                 <th scope="col" className="c-age">{t('inventory.columns.qty')}</th>
                 <th scope="col" className="c-age">{t('inventory.columns.minQty')}</th>
-                <th scope="col">{t('inventory.columns.unit')}</th>
+                <th scope="col" style={{ width: 90 }}>{t('inventory.columns.unit')}</th>
                 <th scope="col" className="c-status">{t('inventory.columns.status')}</th>
                 <th scope="col" className="c-act"><span className="sr-only">{t('common.actions')}</span></th>
               </tr>
