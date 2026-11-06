@@ -55,7 +55,7 @@ export function PrescriptionsSection({ patientId }: Props) {
 
   return (
     <div className="detail-card glass mr-section" style={{ gridColumn: '1 / -1' }}>
-      <div className="card-head" style={{ margin: 'calc(-1 * var(--space-5)) calc(-1 * var(--space-5)) var(--space-4)' }}>
+      <div className="card-head">
         <h3>{t('patients.medicalRecord.prescriptions')}</h3>
         {savedPrescriptions.length > 0 && <span className="panel-head cnt-badge">{savedPrescriptions.length}</span>}
         <div className="spacer" />
@@ -65,6 +65,7 @@ export function PrescriptionsSection({ patientId }: Props) {
         </button>
       </div>
 
+      <div className="card-body">
       {alerts && (
         <div className="notice" role="alert" style={{ marginBottom: 'var(--space-4)' }}>
           <svg width={18} height={18} aria-hidden="true"><use href="#i-alert-triangle" /></svg>
@@ -127,6 +128,7 @@ export function PrescriptionsSection({ patientId }: Props) {
           ))}
         </ul>
       )}
+      </div>
     </div>
   );
 }

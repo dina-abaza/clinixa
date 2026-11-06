@@ -134,9 +134,9 @@ export function EmployeesTab() {
             <thead>
               <tr>
                 <th scope="col" className="c-name">{t('admin.employees.columns.name')}</th>
-                <th scope="col">{t('admin.employees.columns.username')}</th>
-                <th scope="col">{t('admin.employees.columns.role')}</th>
-                <th scope="col">{t('admin.employees.columns.branch')}</th>
+                <th scope="col" style={{ width: 140 }}>{t('admin.employees.columns.username')}</th>
+                <th scope="col" style={{ width: 110 }}>{t('admin.employees.columns.role')}</th>
+                <th scope="col" style={{ width: 170 }}>{t('admin.employees.columns.branch')}</th>
                 <th scope="col" className="c-status">{t('admin.employees.columns.status')}</th>
                 <th scope="col" className="c-act"><span className="sr-only">{t('common.actions')}</span></th>
               </tr>
@@ -170,13 +170,17 @@ export function EmployeesTab() {
                       <td>{t(`shell.roles.${employee.role}`)}</td>
                       <td>
                         {canEdit && !employee.is_owner ? (
-                          <select
-                            value={employee.branch_id ?? ''}
-                            onChange={(event) => void handleBranchChange(employee, event.target.value)}
-                            aria-label={`فرع الموظف ${employee.name_ar}`}
-                          >
-                            {branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name_ar}</option>)}
-                          </select>
+                          <div className="select-inline" style={{ width: '100%' }}>
+                            <select
+                              value={employee.branch_id ?? ''}
+                              onChange={(event) => void handleBranchChange(employee, event.target.value)}
+                              aria-label={`فرع الموظف ${employee.name_ar}`}
+                              style={{ width: '100%' }}
+                            >
+                              {branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name_ar}</option>)}
+                            </select>
+                            <span className="chev"><svg width={16} height={16} aria-hidden="true"><use href="#i-chevron-down" /></svg></span>
+                          </div>
                         ) : branchName(employee.branch_id)}
                       </td>
                       <td className="c-status">

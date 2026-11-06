@@ -13,12 +13,18 @@ import {
   updateBackupSchedule,
 } from '../../lib/api/backup';
 import type { BackupScheduleData, GoogleDriveFileInfo } from '../../lib/api/backup';
+import { formatTime12h } from '../../lib/formatTime';
 import { useAuthStore } from '../../lib/store/authStore';
 import { hasPermission } from '../../lib/permissions';
 
 /** تبويب النسخ الاحتياطي مع Google Drive Integration */
 export function BackupTab() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  /* المسار دايمًا بيتكتب ltr (أرقام ومسارات إنجليزي)، لكن مكانه في الصف
+     المفروض يتبع اتجاه الصفحة — لو سبناها "start" المنطقية هتتفسر حسب
+     اتجاه العنصر نفسه (ltr) مش اتجاه الصفحة، فتنزلق بعيد عن الأيقونة
+     والعنوان اللي فوقها. */
+  const pathTextAlign: 'left' | 'right' = i18n.dir() === 'rtl' ? 'right' : 'left';
   const queryClient = useQueryClient();
   const permissions = useAuthStore((s) => s.employee?.permissions);
   const canEdit = hasPermission(permissions, 'admin.edit');
@@ -325,6 +331,7 @@ export function BackupTab() {
       <div className="form-grid">
         <div className="form-field">
           <label>التكرار</label>
+          <div className="select-inline" style={{ width: '100%' }}>
           <select
             value={schedule.frequency}
             onChange={(event) => {
@@ -334,12 +341,15 @@ export function BackupTab() {
                 day_of_week: frequency === 'weekly' ? (schedule.day_of_week ?? 0) : null,
               });
             }}
+            style={{ width: '100%' }}
           >
             <option value="minutely">كل دقيقة</option>
             <option value="hourly">كل ساعة</option>
             <option value="daily">يومياً</option>
             <option value="weekly">أسبوعياً</option>
           </select>
+          <span className="chev"><svg width={16} height={16} aria-hidden="true"><use href="#i-chevron-down" /></svg></span>
+          </div>
         </div>
         {schedule.frequency !== 'minutely' && (
           <div className="form-field">
@@ -356,6 +366,10 @@ export function BackupTab() {
                   updateScheduleState(schedule.destination, { time: `00:${String(minute).padStart(2, '0')}` });
                 }}
                 dir="ltr"
+                style={{
+                  minHeight: 44, padding: '10px 16px', borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--color-border-subtle)', background: 'var(--color-surface-glass-elevated)',
+                }}
               />
             ) : (
               <input
@@ -363,6 +377,10 @@ export function BackupTab() {
                 value={schedule.time}
                 onChange={(event) => updateScheduleState(schedule.destination, { time: event.target.value })}
                 dir="ltr"
+                style={{
+                  minHeight: 44, padding: '10px 16px', borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--color-border-subtle)', background: 'var(--color-surface-glass-elevated)',
+                }}
               />
             )}
           </div>
@@ -370,9 +388,11 @@ export function BackupTab() {
         {schedule.frequency === 'weekly' && (
           <div className="form-field">
             <label>يوم الأسبوع</label>
+            <div className="select-inline" style={{ width: '100%' }}>
             <select
               value={schedule.day_of_week ?? 0}
               onChange={(event) => updateScheduleState(schedule.destination, { day_of_week: Number(event.target.value) })}
+              style={{ width: '100%' }}
             >
               <option value={0}>الأحد</option>
               <option value={1}>الإثنين</option>
@@ -382,13 +402,15 @@ export function BackupTab() {
               <option value={5}>الجمعة</option>
               <option value={6}>السبت</option>
             </select>
+            <span className="chev"><svg width={16} height={16} aria-hidden="true"><use href="#i-chevron-down" /></svg></span>
+            </div>
           </div>
         )}
       </div>
 
       {isLocal && (
         <>
-          <div className="form-field" style={{ marginTop: 'var(--space-3)' }}>
+          <div className="form-field">
             <label>مجلد النسخ التلقائي (اختياري)</label>
             <div style={{ display: 'flex', alignItems: 'stretch', gap: 'var(--space-2)' }}>
               <input
@@ -397,7 +419,7 @@ export function BackupTab() {
                 onChange={(event) => setLocalSchedulePath(event.target.value)}
                 placeholder="يستخدم المجلد الافتراضي إذا تُرك فارغاً"
                 dir="ltr"
-                style={{ flex: 1, minWidth: 0 }}
+                style={{ flex: 1, minWidth: 0, textAlign: pathTextAlign }}
               />
               <button
                 type="button"
@@ -421,14 +443,17 @@ export function BackupTab() {
               )}
             </div>
           </div>
-          <div className="form-field" style={{ marginTop: 'var(--space-3)' }}>
+          <div className="form-field">
             <label>كلمة مرور النسخة (اختياري)</label>
-            <input type="password" value={localSchedulePassword} onChange={(event) => setLocalSchedulePassword(event.target.value)} placeholder={schedule.has_backup_password ? 'محفوظة - اكتب قيمة جديدة للتغيير' : 'بدون تشفير إذا تُرك فارغاً'} dir="ltr" autoComplete="new-password" />
+            <div className="input-wrap">
+              <svg width={18} height={18} aria-hidden="true"><use href="#i-lock" /></svg>
+              <input type="password" value={localSchedulePassword} onChange={(event) => setLocalSchedulePassword(event.target.value)} placeholder={schedule.has_backup_password ? 'محفوظة - اكتب قيمة جديدة للتغيير' : 'بدون تشفير إذا تُرك فارغاً'} dir="ltr" autoComplete="new-password" />
+            </div>
           </div>
         </>
       )}
 
-      <button type="button" className="btn btn-primary btn-inline" style={{ marginTop: 'var(--space-4)' }} onClick={() => saveSchedule(schedule)} disabled={scheduleMutation.isPending}>
+      <button type="button" className="btn btn-primary btn-inline" onClick={() => saveSchedule(schedule)} disabled={scheduleMutation.isPending}>
         <svg className="spinner" width={18} height={18} aria-hidden="true"><use href="#i-loader" /></svg>
         <svg width={18} height={18} aria-hidden="true"><use href="#i-check" /></svg>
         <span>حفظ الجدولة</span>
@@ -482,7 +507,7 @@ export function BackupTab() {
                       fontSize: 'var(--text-sm)',
                       fontWeight: 500,
                       direction: 'ltr',
-                      textAlign: 'start',
+                      textAlign: pathTextAlign,
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
@@ -938,7 +963,7 @@ export function BackupTab() {
                 : items.map((record) => (
                   <tr key={record.id}>
                     <td className="num">{record.date}</td>
-                    <td className="num">{record.time}</td>
+                    <td className="num">{formatTime12h(record.time)}</td>
                     <td className="c-status">
                       {record.status === 'ok' ? (
                         <span className="badge badge-success">{t('admin.backup.statusOk')}</span>
@@ -1095,7 +1120,7 @@ export function BackupTab() {
                               </div>
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 <div style={{
-                                  fontSize: 'var(--text-sm)', fontWeight: 500, direction: 'ltr', textAlign: 'start',
+                                  fontSize: 'var(--text-sm)', fontWeight: 500, direction: 'ltr', textAlign: pathTextAlign,
                                   whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                                 }}>
                                   {f.name}
@@ -1149,7 +1174,7 @@ export function BackupTab() {
                               <option value="">{t('admin.backup.restoreLatestOk')}</option>
                               {okBackups.map((b) => (
                                 <option key={b.id} value={b.id}>
-                                  {b.date} {b.time} — {t(`admin.backup.destinations.${b.destination}`)}
+                                  {b.date} {formatTime12h(b.time)} — {t(`admin.backup.destinations.${b.destination}`)}
                                 </option>
                               ))}
                             </select>

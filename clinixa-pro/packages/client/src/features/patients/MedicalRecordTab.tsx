@@ -49,7 +49,7 @@ function RecordSection({
 }) {
   return (
     <div className="detail-card glass mr-section">
-      <div className="card-head" style={{ margin: 'calc(-1 * var(--space-5)) calc(-1 * var(--space-5)) var(--space-4)' }}>
+      <div className="card-head">
         <h3>{title}</h3>
         <span className="panel-head cnt-badge">{count}</span>
         <div className="spacer" />
@@ -58,8 +58,10 @@ function RecordSection({
           <span>{isAdding ? undefined : addLabel}</span>
         </button>
       </div>
-      {isAdding && <div className="mr-form">{form}</div>}
-      {count === 0 && !isAdding ? <p className="detail-value muted mr-empty">—</p> : children}
+      <div className="card-body">
+        {isAdding && <div className="mr-form">{form}</div>}
+        {count === 0 && !isAdding ? <p className="detail-value muted mr-empty">—</p> : children}
+      </div>
     </div>
   );
 }
@@ -368,21 +370,23 @@ export function MedicalRecordTab({ patientId }: Props) {
       </RecordSection>
 
       <div className="detail-card glass mr-section">
-        <div className="card-head" style={{ margin: 'calc(-1 * var(--space-5)) calc(-1 * var(--space-5)) var(--space-4)' }}>
+        <div className="card-head">
           <h3>{t('patients.medicalRecord.documents')}</h3>
           <span className="panel-head cnt-badge">{record.documents.length}</span>
         </div>
-        {record.documents.length === 0 ? (
-          <p className="detail-value muted mr-empty">—</p>
-        ) : (
-          <ul className="mr-list">
-            {record.documents.map((d) => (
-              <li key={d.id}>
-                <span className="mr-date num">{d.date}</span> — {d.file_name}
-              </li>
-            ))}
-          </ul>
-        )}
+        <div className="card-body">
+          {record.documents.length === 0 ? (
+            <p className="detail-value muted mr-empty">—</p>
+          ) : (
+            <ul className="mr-list">
+              {record.documents.map((d) => (
+                <li key={d.id}>
+                  <span className="mr-date num">{d.date}</span> — {d.file_name}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
 
       <PrescriptionsSection patientId={patientId} />
