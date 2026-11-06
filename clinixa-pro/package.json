@@ -8,10 +8,10 @@
   "description": "Clinixa Clinic Management System",
   "main": "packages/electron/dist/main.js",
   "scripts": {
-    "dev": "npm run dev --workspace=electron",
-    "dev:server": "npm run dev --workspace=server",
-    "dev:client": "npm run dev --workspace=client",
-    "build": "npm run build --workspaces",
+    "dev": "node init && npm run dev --workspace=electron",
+    "dev:server": "node init && npm run dev --workspace=server",
+    "dev:client": "node init && npm run dev --workspace=client",
+    "build": "node init && npm run build --workspaces",
     "dist": "electron-builder --win nsis",
     "test": "npm run test --workspace=server"
   },

@@ -74,9 +74,9 @@ export function BranchesTab() {
               <tr>
                 <th scope="col" className="c-name">{t('admin.branches.columns.name')}</th>
                 <th scope="col" className="c-phone">{t('admin.branches.columns.phone')}</th>
-                <th scope="col">{t('admin.branches.columns.hours')}</th>
+                <th scope="col" style={{ width: 140 }}>{t('admin.branches.columns.hours')}</th>
                 <th scope="col" className="c-status">{t('admin.branches.columns.status')}</th>
-                <th scope="col" className="c-act"><span className="sr-only">{t('common.actions')}</span></th>
+                <th scope="col" className="c-act" style={{ width: 110 }}><span className="sr-only">{t('common.actions')}</span></th>
               </tr>
             </thead>
             <tbody>

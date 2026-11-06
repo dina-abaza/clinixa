@@ -12,6 +12,7 @@ import {
 import { useAuthStore } from '../../lib/store/authStore';
 import { hasPermission } from '../../lib/permissions';
 import { getAvatarColorClass, getAvatarInitials } from '../../lib/avatar';
+import { formatTime12h } from '../../lib/formatTime';
 import { CheckInModal } from './CheckInModal';
 import { FinishAttendanceModal } from './FinishAttendanceModal';
 import './AttendancePage.css';
@@ -127,32 +128,31 @@ export function AttendancePage() {
         </button>
       </div>
 
-      {tab === 'history' && (
-        <div className="card-toolbar" style={{ marginBottom: 'var(--space-4)', borderBottom: 'none', padding: 0 }}>
-          <div className="select-inline">
-            <span className="lead-icon"><svg width={16} height={16} aria-hidden="true"><use href="#i-calendar" /></svg></span>
-            <input
-              type="date"
-              value={historyDate}
-              max={todayIso()}
-              onChange={(e) => setHistoryDate(e.target.value)}
-              style={{
-                minHeight: 44,
-                padding: '10px 16px',
-                paddingInlineStart: 42,
-                borderRadius: 'var(--radius-md)',
-                border: '1px solid var(--color-border-subtle)',
-                background: 'var(--color-surface-glass-elevated)',
-                fontFamily: 'inherit',
-                fontSize: 'var(--text-body-sm)',
-                color: 'inherit',
-              }}
-            />
-          </div>
-        </div>
-      )}
-
       <div className="table-card glass">
+        {tab === 'history' && (
+          <div className="card-toolbar">
+            <div className="select-inline">
+              <span className="lead-icon"><svg width={16} height={16} aria-hidden="true"><use href="#i-calendar" /></svg></span>
+              <input
+                type="date"
+                value={historyDate}
+                max={todayIso()}
+                onChange={(e) => setHistoryDate(e.target.value)}
+                style={{
+                  minHeight: 44,
+                  padding: '10px 16px',
+                  paddingInlineStart: 42,
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--color-border-subtle)',
+                  background: 'var(--color-surface-glass-elevated)',
+                  fontFamily: 'inherit',
+                  fontSize: 'var(--text-body-sm)',
+                  color: 'inherit',
+                }}
+              />
+            </div>
+          </div>
+        )}
         {isEmpty ? (
           <div className="empty-state">
             <div className="empty-icon" aria-hidden="true">
@@ -196,7 +196,7 @@ export function AttendancePage() {
                             </span>
                           </div>
                         </td>
-                        <td className="c-time num">{item.time.slice(0, 5)}</td>
+                        <td className="c-time num">{formatTime12h(item.time)}</td>
                         <td className="c-status">
                           <span className={`badge ${meta.badge}`}>{t(meta.labelKey)}</span>
                         </td>
